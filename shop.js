@@ -8,7 +8,7 @@ const ACHIEVEMENTS = [
     { id: "level_5", title: "Опытный", desc: "Достичь 5 уровня", icon: "⭐", check: (s) => window.getLevel(s.xp) >= 5 },
     { id: "rich", title: "Богач", desc: "Накопить 1000 XP", icon: "💰", check: (s) => s.xp >= 1000 },
     { id: "sherlock", title: "Шерлок", desc: "Пройти 5 семестровых", icon: "🕵️", check: (s) => Object.keys(s.results).filter(k => k.includes('_sem')).length >= 5 },
-    { id: "london_eye", title: "Лондонский глаз", desc: "Пройти все итоговые (5 лет)", icon: "🎡", check: (s) => Object.keys(s.results).filter(k => k.startsWith('final_')).length >= 10 },
+    { id: "london_eye", title: "Лондонский глаз", desc: "Пройти все итоговые", icon: "🎡", check: (s) => Object.keys(s.results).filter(k => k.startsWith('final_')).length >= 10 },
     { id: "perfect", title: "Идеально", desc: "Получить оценку 5", icon: "💯", check: (s) => Object.values(s.results).some(r => r.grade === 5) }
 ];
 
@@ -24,7 +24,6 @@ const THEMES = [
     { id: "tea-time", title: "Tea Time ☕", price: 900, color: "#f8bbd0", type: "theme" }
 ];
 
-// ИСПОЛЬЗУЕМ ЭМОДЗИ ВМЕСТО ССЫЛОК, ЧТОБЫ КАРТИНКИ НЕ ЛОМАЛИСЬ
 const AVATARS = [
     { id: "default", url: null, price: 0, title: "Стандартный" },
     { id: "av1", url: "👦", price: 200, title: "Парень" },
@@ -60,7 +59,7 @@ window.renderShopPage = function() {
     var app = document.getElementById("app"); if (!app) return; app.innerHTML = "";
     document.getElementById("crumbs").textContent = "Магазин XP";
     app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
-    app.appendChild(el(`<section class="hero"><h1>🛒 Магазин</h1><p>Баланс: <b style="color:var(--gold); font-size:24px;">${window.state.xp} XP</b></p></section>`));
+    app.appendChild(el(`<section class="hero"><h1>🛒 Магазин</h1><p>Баланс: <b style="color:var(--gold); font-size:24px;">${window.state.staff ? "∞ (Учитель)" : window.state.xp + " XP"}</b></p></section>`));
 
     function renderCategory(title, items, type) {
         var html = `<h3 style="margin-top:30px; border-bottom: 2px solid var(--border); padding-bottom:10px;">${title}</h3>`;
@@ -81,10 +80,11 @@ window.renderShopPage = function() {
             var preview = "";
             if (type === 'theme') preview = `<div style="height:40px; border-radius:8px; background:${item.color}; margin-bottom:10px; border: 1px solid var(--border);"></div>`;
             if (type === 'avatar' && item.url && item.url !== 'url') {
-                if (item.url.length <= 4 && !item.url.startsWith("http")) {
+                // ПРОВЕРКА: если это эмодзи, рендерим текст, иначе картинку
+                if (item.url.length <= 5 && !item.url.startsWith("http")) {
                     preview = `<div style="font-size:40px; line-height:60px; margin-bottom:10px;">${item.url}</div>`;
                 } else {
-                    preview = `<img src="${item.url}" style="width:60px; height:60px; border-radius:50%; margin:0 auto 10px; display:block; background:var(--card-soft);">`;
+                    preview = `<img src="${item.url}" style="width:60px; height:60px; border-radius:50%; margin:0 auto 10px; display:block; background:var(--card-soft); object-fit:cover;">`;
                 }
             }
             if (type === 'effect') preview = `<div style="height:40px; width:40px; border-radius:50%; background:var(--card); margin:0 auto 10px; ${item.css}"></div>`;
@@ -105,19 +105,22 @@ window.renderShopPage = function() {
 };
 
 window.buyShopItem = function(type, id, price, url) {
-    if (window.state.xp < price) return window.showToast("Недостаточно XP!", "err");
+    if (!window.state.staff && window.state.xp < price) return window.showToast("Недостаточно XP!", "err");
+    
     if (url === 'url') {
         url = prompt("Введите прямую ссылку на картинку (URL, заканчивающийся на .png, .jpg, .gif):");
         if (!url || (!url.startsWith("http") && !url.startsWith("data:"))) return window.showToast("Неверный URL", "err");
     }
-    if (confirm(`Купить за ${price} XP?`)) {
-        window.state.xp -= price;
+    
+    if (confirm(window.state.staff ? "Выдать бесплатно?" : `Купить за ${price} XP?`)) {
+        if (!window.state.staff) window.state.xp -= price;
+        
         if (type === 'theme') { if(!window.state.purchasedThemes) window.state.purchasedThemes = []; window.state.purchasedThemes.push(id); }
         if (type === 'avatar') { window.state.avatar = url; }
         if (type === 'effect') { window.state.effect = id; }
         
         window.saveStudentData();
-        window.showToast("Покупка успешна!", "ok");
+        window.showToast(window.state.staff ? "Выдано!" : "Покупка успешна!", "ok");
         window.renderShopPage();
         window.renderUserChip();
     }
@@ -150,7 +153,7 @@ window.renderProfilePage = function() {
   
   var avHtml = "👨‍🎓";
   if (window.state.avatar) {
-      if (window.state.avatar.length <= 4 && !window.state.avatar.startsWith("http")) {
+      if (window.state.avatar.length <= 5 && !window.state.avatar.startsWith("http")) {
           avHtml = `<span style="font-size:60px;">${window.state.avatar}</span>`;
       } else {
           avHtml = `<img src="${window.state.avatar}" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">`;
@@ -167,7 +170,7 @@ window.renderProfilePage = function() {
           var grade = results[key].grade || "?";
           var color = grade >= 4 ? "var(--ok)" : (grade >= 3 ? "var(--gold)" : "var(--err)");
           var displayName = key;
-          if (key.includes("_test")) displayName = "Тест / Практика (Тема " + key.replace("_test", "") + ")";
+          if (key.includes("_test")) displayName = "Тест / Практика";
           if (key.includes("_sem")) displayName = "Семестровая";
           if (key.startsWith("final_")) displayName = "Итоговый экзамен";
           
