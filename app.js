@@ -31,7 +31,7 @@ try {
   var _st = JSON.parse(localStorage.getItem("mdk.staff") || "null"); if (_st && _st.name) window.state.staff = _st;
   window.state.certBg = localStorage.getItem("mdk.certBg") || "1.jpg";
   window.state.suppBg = localStorage.getItem("mdk.suppBg") || "1.jpg";
-} catch (e) { console.warn("LocalStorage unavailable"); }
+} catch (e) { console.warn("LocalStorage недоступен"); }
 
 if (!window.MDK_DATA || !window.MDK_DATA[window.state.activeCourseId]) window.state.activeCourseId = "basic";
 window.COURSE = (window.MDK_DATA && window.MDK_DATA[window.state.activeCourseId]) || null;
@@ -42,7 +42,7 @@ window.getLevel = (xp) => !xp || xp <= 0 ? 1 : Math.min(Math.floor(Math.sqrt(xp 
 window.updateXpDisplay = function() {
   var el = window.$("xpCount"); if (!el) return;
   if (window.state.staff) {
-      el.textContent = "👨‍🏫 Teacher";
+      el.textContent = "👨‍🏫 Преподаватель";
   } else {
       el.textContent = "🌟 " + window.state.xp + " XP · Lv." + window.getLevel(window.state.xp);
   }
@@ -101,7 +101,7 @@ window.loadStudentData = function() {
 // ================= АВТОРИЗАЦИЯ =================
 window.doStudentLogin = function() {
   var n = window.$("loginName").value.trim(); var g = window.$("loginGroup").value.trim();
-  if (!n || !g) { window.showToast("Enter your full name and group!", "err"); return; }
+  if (!n || !g) { window.showToast("Введите ФИО и группу!", "err"); return; }
   window.state.student = { name: n, group: g.toUpperCase() }; window.state.staff = null;
   try { localStorage.setItem("mdk.student", JSON.stringify(window.state.student)); localStorage.removeItem("mdk.staff"); } catch(e){}
   window.renderUserChip(); window.loadStudentData(); window.route();
@@ -110,19 +110,19 @@ window.doStudentLogin = function() {
 window.doTeacherLogin = function() {
   var u = window.$("teacherUser").value.trim(); var p = window.$("teacherPass").value.trim();
   var errEl = window.$("teacherLoginError");
-  if (!u || !p) { errEl.textContent = "Enter login and password"; errEl.style.display = "block"; return; }
+  if (!u || !p) { errEl.textContent = "Введите логин и пароль"; errEl.style.display = "block"; return; }
   
   if ((u === "admin" && p === "admin") || (u === "teacher" && p === "teacher")) {
-      window.state.staff = { name: u === "admin" ? "Administrator" : "Teacher", role: u === "admin" ? "admin" : "teacher" };
+      window.state.staff = { name: u === "admin" ? "Администратор" : "Анна Анатольевна", role: u === "admin" ? "admin" : "teacher" };
       window.state.student = null;
       window.state.xp = 999999; 
       try { localStorage.setItem("mdk.staff", JSON.stringify(window.state.staff)); localStorage.removeItem("mdk.student"); } catch(e){}
       window.renderUserChip(); window.updateXpDisplay(); window.route();
-  } else { errEl.textContent = "Invalid login or password"; errEl.style.display = "block"; }
+  } else { errEl.textContent = "Неверный логин или пароль"; errEl.style.display = "block"; }
 };
 
 window.handleLogout = function() {
-  if (!confirm("Log out of the system?")) return;
+  if (!confirm("Выйти из системы?")) return;
   window.state.student = null; window.state.staff = null; window.state.xp = 0;
   try { localStorage.removeItem("mdk.student"); localStorage.removeItem("mdk.staff"); } catch(e){}
   if (window.$("loginName")) window.$("loginName").value = "";
@@ -148,13 +148,13 @@ window.renderUserChip = function() {
   if (!window.$("userChipName")) return;
   if (window.state.staff) { 
       window.$("userChipName").textContent = window.state.staff.name; 
-      window.$("userChipGroup").textContent = "Teacher"; 
+      window.$("userChipGroup").textContent = "Преподаватель"; 
       window.$("userChipAvatar").innerHTML = "👨‍🏫"; 
       return; 
   }
   if (!window.state.student) return;
   window.$("userChipName").textContent = window.state.student.name; 
-  window.$("userChipGroup").textContent = "Gr. " + window.state.student.group;
+  window.$("userChipGroup").textContent = "Гр. " + window.state.student.group;
   window.$("userChipAvatar").innerHTML = window.state.avatar ? `<img src="${window.state.avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : "👨‍🎓";
 };
 
@@ -185,10 +185,10 @@ window.route = function() {
     if (page === "topic") window.renderTopic(parts[1], parts[2]);
     else if (page === "certificate") window.renderCertificatePage();
     else if (page === "profile" && window.renderProfilePage) window.renderProfilePage();
-    else if (page === "videos") window.renderSimplePage("Video Lessons", window.GLOBAL_DATA?.videos, "🎬");
-    else if (page === "passports") window.renderSimplePage("Materials", window.GLOBAL_DATA?.passports, "📄");
-    else if (page === "safety") window.renderSimplePage("Safety Rules", window.GLOBAL_DATA?.safety, "🦺");
-    else if (page === "formatting") window.renderSimplePage("Formatting", [{title: "Report formatting", content: "Times New Roman 14, line spacing 1.5, margins: top/bottom 2 cm, left 3 cm, right 1.5 cm."}], "📝");
+    else if (page === "videos") window.renderSimplePage("Видеоуроки", window.GLOBAL_DATA?.videos, "🎬");
+    else if (page === "passports") window.renderSimplePage("Учебные материалы", window.GLOBAL_DATA?.passports, "📄");
+    else if (page === "safety") window.renderSimplePage("Охрана труда", window.GLOBAL_DATA?.safety, "🦺");
+    else if (page === "formatting") window.renderSimplePage("Оформление работ", [{title: "Требования к оформлению", content: "Times New Roman 14, интервал 1.5."}], "📝");
     else if (page === "links" && window.renderLinksPage) window.renderLinksPage();
     else if (page === "training") { 
         if (window.state.activeCourseId === "basic" && window.renderTraining_basic) window.renderTraining_basic(parts[1]); 
@@ -206,7 +206,7 @@ window.route = function() {
     else if (page === "achievements") window.renderAchievementsPage();
     else renderHome();
   } catch (err) { 
-      app.innerHTML = '<div class="module" style="color:var(--err);">Error: ' + window.escapeHtml(err.message) + '</div>'; 
+      app.innerHTML = '<div class="module" style="color:var(--err);">Ошибка: ' + window.escapeHtml(err.message) + '</div>'; 
   }
   window.scrollTo(0, 0);
 };
@@ -218,7 +218,7 @@ window.buildTestBlock = function(prefix, uniqueId, questions) {
     var safeQuestions = encodeURIComponent(JSON.stringify(questions));
     
     var html = `<div style="margin-top:20px; padding-top:20px; border-top:1px dashed var(--border);">
-        <p style="font-weight:bold; margin-bottom:15px; font-size:16px;">🎯 Quiz:</p>`;
+        <p style="font-weight:bold; margin-bottom:15px; font-size:16px;">🎯 Проверочный тест:</p>`;
     
     questions.forEach((q, qi) => {
         html += `<div style="margin-bottom:15px; padding:15px; background:var(--bg); border-radius:8px; border: 1px solid var(--border);">
@@ -232,7 +232,7 @@ window.buildTestBlock = function(prefix, uniqueId, questions) {
         html += `</div></div>`;
     });
     
-    html += `<button class="btn" id="btn_${prefix}_${uniqueId}" style="width:100%; padding:12px; font-size:16px; margin-top:10px;" onclick="window.gradeTest('${prefix}', '${uniqueId}', '${safeQuestions}')">Check Result</button>
+    html += `<button class="btn" id="btn_${prefix}_${uniqueId}" style="width:100%; padding:12px; font-size:16px; margin-top:10px;" onclick="window.gradeTest('${prefix}', '${uniqueId}', '${safeQuestions}')">Проверить результат</button>
     <div id="fb_${prefix}_${uniqueId}" style="margin-top:15px; font-weight:bold; font-size:18px; text-align:center;"></div></div>`;
     
     return html;
@@ -263,7 +263,7 @@ window.renderTopic = function(topicId, activeTab) {
         }
     }
     
-    if (!topic) { app.innerHTML = '<div class="module">Topic not found.</div>'; return; }
+    if (!topic) { app.innerHTML = '<div class="module">Тема не найдена.</div>'; return; }
     
     if (foundCourseId && window.state.activeCourseId !== foundCourseId) {
         window.state.activeCourseId = foundCourseId;
@@ -272,16 +272,16 @@ window.renderTopic = function(topicId, activeTab) {
         if (selector) selector.value = foundCourseId;
     }
 
-    app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← Home</a>'));
+    app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
     app.appendChild(el(`<section class="hero"><span class="brand-badge">${topic.code}</span><h1>${topic.title}</h1></section>`));
     
     var tabs = [];
-    if (topic.lectures && topic.lectures.length) tabs.push({ id: 'lectures', label: '📖 Lectures' });
-    if (topic.practicals && topic.practicals.length) tabs.push({ id: 'practicals', label: '🛠 Practice' });
-    if (topic.writing && topic.writing.length) tabs.push({ id: 'writing', label: '✍️ Writing' });
-    if (topic.selfWork && topic.selfWork.length) tabs.push({ id: 'selfWork', label: '✍️ Self-Work' });
-    if ((topic.test && topic.test.length) || (topic.tests && topic.tests.length)) tabs.push({ id: 'test', label: '📝 Test' });
-    if (topic.presentations && topic.presentations.length) tabs.push({ id: 'presentations', label: '📊 Presentations' });
+    if (topic.lectures && topic.lectures.length) tabs.push({ id: 'lectures', label: '📖 Лекции' });
+    if (topic.practicals && topic.practicals.length) tabs.push({ id: 'practicals', label: '🛠 Практика' });
+    if (topic.writing && topic.writing.length) tabs.push({ id: 'writing', label: '✍️ Письменная деятельность' });
+    if (topic.selfWork && topic.selfWork.length) tabs.push({ id: 'selfWork', label: '✍️ Самостоятельная' });
+    if ((topic.test && topic.test.length) || (topic.tests && topic.tests.length)) tabs.push({ id: 'test', label: '📝 Тест' });
+    if (topic.presentations && topic.presentations.length) tabs.push({ id: 'presentations', label: '📊 Презентации' });
 
     if (!activeTab || activeTab === 'lecture') activeTab = 'lectures';
     if (activeTab === 'practical') activeTab = 'practicals';
@@ -330,20 +330,20 @@ window.renderTopic = function(topicId, activeTab) {
                 
             if (expectedAnswer) {
                 html += `<div style="margin-top:15px; padding-top:15px; border-top:1px dashed var(--border);">
-                    <label style="font-weight:bold; display:block; margin-bottom:8px;">Enter your answer:</label>
+                    <label style="font-weight:bold; display:block; margin-bottom:8px;">Введите ваш ответ:</label>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="ans_${uniqueId}" class="self-input" style="max-width:250px; margin:0;" placeholder="Your answer...">
-                        <button class="btn" id="btn_${uniqueId}" onclick="window.checkPracticalAnswer('${uniqueId}', '${expectedAnswer}')">Check</button>
+                        <button class="btn" id="btn_${uniqueId}" onclick="window.checkPracticalAnswer('${uniqueId}', '${expectedAnswer}')">Проверить</button>
                     </div>
                     <div id="fb_${uniqueId}" style="margin-top:15px; font-weight:bold; font-size:16px;"></div>
                 </div>`;
             } else if (extraData && extraData.questions) {
                 html += window.buildTestBlock("prac", uniqueId, extraData.questions);
             } else if (baseQuestions.length > 0) {
-                html += `<p style="font-size:14px; color:var(--accent); margin-top:15px; margin-bottom:10px;">💡 * To test your knowledge on this task, complete the quiz:</p>`;
+                html += `<p style="font-size:14px; color:var(--accent); margin-top:15px; margin-bottom:10px;">💡 * Для проверки знаний по этому заданию пройдите тест:</p>`;
                 html += window.buildTestBlock("prac", uniqueId, baseQuestions);
             } else {
-                html += `<p style="color:var(--muted); font-size:13px; margin-top:15px; font-style:italic;">* Test questions have not been added yet.</p>`;
+                html += `<p style="color:var(--muted); font-size:13px; margin-top:15px; font-style:italic;">* Вопросы для проверки пока не добавлены.</p>`;
             }
             
             html += `</div>`;
@@ -359,23 +359,33 @@ window.renderTopic = function(topicId, activeTab) {
             var uniqueId = `writing_${topicId}_${index}`;
             var saved = window.state.results[uniqueId] || {};
             var studentText = saved.text || "";
-            var grade = saved.grade ? `<span style="color:var(--ok); font-weight:bold; margin-left:10px;">Grade: ${saved.grade}</span>` : "";
+            var status = saved.status || "not_started";
+            var grade = saved.grade || "—";
+
+            var statusBadge = "";
+            if (status === "pending") statusBadge = `<span style="background:var(--gold); color:#000; padding:2px 8px; border-radius:4px; font-size:12px; margin-left:10px;">На проверке</span>`;
+            else if (status === "graded") statusBadge = `<span style="background:var(--ok); color:#000; padding:2px 8px; border-radius:4px; font-size:12px; margin-left:10px;">Оценено: ${grade}</span>`;
             
             var html = `<div style="margin-bottom:20px; padding:20px; background:var(--card-soft); border-radius:12px; border:1px solid var(--border);">
-                <h4 style="margin-top:0; color:var(--accent); font-size:18px;">${w.code} ${w.title} ${grade}</h4>
+                <h4 style="margin-top:0; color:var(--accent); font-size:18px;">${w.code} ${w.title} ${statusBadge}</h4>
                 <p><b>Task:</b> ${w.task}</p>`;
 
             if (isTeacher) {
                 html += `<div style="margin-top:15px; padding:15px; background:var(--bg); border-radius:8px; border:1px solid var(--border);">
-                    <b>Student's Submission:</b>
-                    <p style="white-space:pre-wrap; margin-top:10px; font-style:italic; color:var(--text-soft);">${studentText || '<span style="color:var(--muted);">Not submitted yet.</span>'}</p>
+                    <b>Работа студента:</b>
+                    <p style="white-space:pre-wrap; margin-top:10px; font-style:italic; color:var(--text-soft);">${studentText || '<span style="color:var(--muted);">Студент еще не отправил работу.</span>'}</p>
                 </div>`;
             } else {
                 html += `<div style="margin-top:15px; padding-top:15px; border-top:1px dashed var(--border);">
-                    <label style="font-weight:bold; display:block; margin-bottom:8px;">Write your answer here:</label>
-                    <textarea id="wr_${uniqueId}" class="self-input" style="width:100%; min-height:150px; resize:vertical; line-height:1.5;" placeholder="Start writing...">${studentText}</textarea>
-                    <button class="btn" style="margin-top:10px; padding:10px 20px; width:100%; background:var(--accent); color:#fff;" onclick="window.saveWritingWork('${uniqueId}')">💾 Save Work</button>
-                </div>`;
+                    <label style="font-weight:bold; display:block; margin-bottom:8px;">Ваш ответ:</label>
+                    <textarea id="wr_${uniqueId}" class="self-input" style="width:100%; min-height:150px; resize:vertical; line-height:1.5;" placeholder="Start writing here...">${studentText}</textarea>`;
+                
+                if (status === "graded") {
+                    html += `<p style="color:var(--ok); font-weight:bold; margin-top:10px;">Оценка преподавателя: ${grade}</p>`;
+                } else {
+                    html += `<button class="btn" style="margin-top:10px; padding:10px 20px; width:100%; background:var(--accent); color:#fff;" onclick="window.saveWritingWork('${uniqueId}')">💾 Отправить на проверку</button>`;
+                }
+                html += `</div>`;
             }
             
             html += `</div>`;
@@ -401,7 +411,7 @@ window.renderTopic = function(topicId, activeTab) {
             } else if (baseQuestions.length > 0) {
                 html += window.buildTestBlock("self", uniqueId, baseQuestions);
             } else {
-                html += `<p style="color:var(--muted); font-size:13px; margin-top:15px; font-style:italic;">* No questions added for this work yet.</p>`;
+                html += `<p style="color:var(--muted); font-size:13px; margin-top:15px; font-style:italic;">* Для этой работы пока не добавлены вопросы.</p>`;
             }
 
             html += `</div>`;
@@ -411,8 +421,8 @@ window.renderTopic = function(topicId, activeTab) {
     
     // --- 4. ТЕСТ (По теме) ---
     else if (activeTab === 'test' && baseQuestions.length > 0) {
-        contentBox.innerHTML = `<h3>📝 Topic Test</h3>
-        <p>Answer all questions to get a grade.</p>
+        contentBox.innerHTML = `<h3>📝 Контрольный тест по теме</h3>
+        <p>Ответьте на все вопросы, чтобы получить оценку.</p>
         ${window.buildTestBlock("inline", topicId, baseQuestions)}`;
     }
     
@@ -426,8 +436,8 @@ window.renderTopic = function(topicId, activeTab) {
                 ${isPdf ? `
                 <div style="width: 100%; height: 500px; margin-top: 15px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border);">
                     <iframe src="${p.file}" width="100%" height="100%" style="border: none;"></iframe>
-                </div>` : `<p style="color:var(--err); font-size:12px; margin-top:10px;">* In-browser viewing is only available for PDF files. Click "Download".</p>`}
-                <a href="${p.file}" download class="btn ghost" style="margin-top:10px; font-size:12px; display:inline-block;">📥 Download file</a>
+                </div>` : `<p style="color:var(--err); font-size:12px; margin-top:10px;">* Просмотр в браузере доступен только для PDF-файлов. Нажмите "Скачать".</p>`}
+                <a href="${p.file}" download class="btn ghost" style="margin-top:10px; font-size:12px; display:inline-block;">📥 Скачать файл</a>
             </div>`;
         });
     } 
@@ -439,17 +449,16 @@ window.saveWritingWork = function(uniqueId) {
     if (!textarea) return;
     
     var text = textarea.value.trim();
-    if (!text) return window.showToast("Please write something before saving.", "err");
+    if (!text) return window.showToast("Пожалуйста, напишите текст перед отправкой.", "err");
 
     if (!window.state.results[uniqueId]) window.state.results[uniqueId] = {};
     window.state.results[uniqueId].text = text;
-    window.state.results[uniqueId].grade = window.state.results[uniqueId].grade || "Pending";
+    window.state.results[uniqueId].status = "pending";
     
     if (window.addXP) window.addXP(15);
     window.saveStudentData();
     
-    window.showToast("Work saved successfully! Teacher will check it soon.", "ok");
-    // Автоматическое обновление страницы для отображения статуса
+    window.showToast("Работа отправлена преподавателю на проверку!", "ok");
     window.renderTopic(window.location.hash.split('/')[2], 'writing');
 };
 
@@ -464,7 +473,7 @@ window.checkPracticalAnswer = function(id, expected) {
     var exp = String(expected).trim().replace(',', '.');
     
     if (val === exp) {
-        fb.innerHTML = `<span style="color:var(--ok); font-size:20px;">✅ Correct! +10 XP</span>`;
+        fb.innerHTML = `<span style="color:var(--ok); font-size:20px;">✅ Верно! +10 XP</span>`;
         input.disabled = true;
         input.style.borderColor = "var(--ok)";
         input.style.background = "rgba(88, 201, 138, 0.1)";
@@ -476,7 +485,7 @@ window.checkPracticalAnswer = function(id, expected) {
             window.saveStudentData();
         }
     } else {
-        fb.innerHTML = `<span style="color:var(--err); font-size:18px;">❌ Incorrect. Try again.</span>`;
+        fb.innerHTML = `<span style="color:var(--err); font-size:18px;">❌ Неверно. Попробуйте еще раз.</span>`;
         input.style.borderColor = "var(--err)";
         setTimeout(() => { input.style.borderColor = "var(--border)"; }, 1500);
     }
@@ -509,11 +518,11 @@ window.gradeTest = function(prefix, uniqueId, encodedQuestions) {
             if (oi === q.correct) {
                 optLabel.style.background = "rgba(88, 201, 138, 0.15)";
                 optLabel.style.borderColor = "var(--ok)";
-                optLabel.innerHTML += " <span style='color:var(--ok); font-weight:bold;'>✅ (Correct)</span>";
+                optLabel.innerHTML += " <span style='color:var(--ok); font-weight:bold;'>✅ (Верно)</span>";
             } else if (oi === selectedVal) {
                 optLabel.style.background = "rgba(255, 110, 94, 0.15)";
                 optLabel.style.borderColor = "var(--err)";
-                optLabel.innerHTML += " <span style='color:var(--err); font-weight:bold;'>❌ (Your choice)</span>";
+                optLabel.innerHTML += " <span style='color:var(--err); font-weight:bold;'>❌ (Ваш выбор)</span>";
             }
         }
     });
@@ -523,7 +532,7 @@ window.gradeTest = function(prefix, uniqueId, encodedQuestions) {
     var fb = document.getElementById("fb_" + prefix + "_" + uniqueId);
     
     if (grade >= 3) {
-        fb.innerHTML = `<span style="color:var(--ok); font-size:24px;">Grade: ${grade}</span><br>Correct ${correct} out of ${total}. +15 XP`;
+        fb.innerHTML = `<span style="color:var(--ok); font-size:24px;">Оценка: ${grade}</span><br>Верно ${correct} из ${total}. +15 XP`;
         if (btn) btn.style.display = "none";
         
         if (!window.state.results[uniqueId]) {
@@ -532,7 +541,7 @@ window.gradeTest = function(prefix, uniqueId, encodedQuestions) {
             window.saveStudentData();
         }
     } else {
-        fb.innerHTML = `<span style="color:var(--err); font-size:24px;">Grade: ${grade}</span><br>Correct ${correct} out of ${total}.<br><button class="btn ghost" style="margin-top:10px;" onclick="window.location.reload()">Try again</button>`;
+        fb.innerHTML = `<span style="color:var(--err); font-size:24px;">Оценка: ${grade}</span><br>Верно ${correct} из ${total}.<br><button class="btn ghost" style="margin-top:10px;" onclick="window.location.reload()">Попробовать снова</button>`;
         if (btn) btn.style.display = "none";
     }
 };
@@ -540,17 +549,17 @@ window.gradeTest = function(prefix, uniqueId, encodedQuestions) {
 // ================= ДОСТИЖЕНИЯ И ПРОСТЫЕ СТРАНИЦЫ =================
 window.renderAchievementsPage = function() {
     var app = window.$("app"); if (!app) return; app.innerHTML = "";
-    document.getElementById("crumbs").textContent = "Achievements";
-    app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← Home</a>'));
-    app.appendChild(el('<section class="hero"><h1>🏆 Achievements</h1><p>Your rewards for hard work</p></section>'));
+    document.getElementById("crumbs").textContent = "Достижения";
+    app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
+    app.appendChild(el('<section class="hero"><h1>🏆 Достижения</h1><p>Твои награды за усердную учебу</p></section>'));
 
     var achievements = [
-        { id: "welcome", title: "First Step", desc: "Log into the system", icon: "🚪" },
-        { id: "reader", title: "Bookworm", desc: "Study the first lecture", icon: "📖" },
-        { id: "hacker", title: "Hacker", desc: "Pass the first test", icon: "💻" },
-        { id: "gamer", title: "Gamer", desc: "Play a mini-game", icon: "🎮" },
-        { id: "level_5", title: "Experienced", desc: "Reach level 5", icon: "⭐" },
-        { id: "rich", title: "Rich", desc: "Accumulate 1000 XP", icon: "💰" }
+        { id: "welcome", title: "Первый шаг", desc: "Войти в систему", icon: "🚪" },
+        { id: "reader", title: "Книжный червь", desc: "Изучить первую лекцию", icon: "📖" },
+        { id: "hacker", title: "Хакер", desc: "Пройти первый тест", icon: "💻" },
+        { id: "gamer", title: "Геймер", desc: "Сыграть в мини-игру", icon: "🎮" },
+        { id: "level_5", title: "Опытный", desc: "Достичь 5 уровня", icon: "⭐" },
+        { id: "rich", title: "Богач", desc: "Накопить 1000 XP", icon: "💰" }
     ];
 
     var box = el('<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px;"></div>');
@@ -573,18 +582,18 @@ window.renderAchievementsPage = function() {
 window.renderSimplePage = function(title, items, icon) {
     var app = document.getElementById("app"); app.innerHTML = "";
     document.getElementById("crumbs").textContent = title;
-    app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← Home</a>'));
+    app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
     app.appendChild(el(`<section class="hero"><h1>${icon} ${title}</h1></section>`));
     var list = el(`<div class="module"></div>`);
     
     if (!items || !items.length) {
-        list.innerHTML = "<p>Materials will be added soon.</p>";
+        list.innerHTML = "<p>Материалы пока не добавлены.</p>";
     } else {
         items.forEach(item => {
             list.innerHTML += `<div style="margin-bottom:10px; padding:15px; border:1px solid var(--border); border-radius:8px; background:var(--card-soft);">
-                <b style="color:var(--accent); font-size:16px;">${item.title || 'Untitled'}</b><br>
+                <b style="color:var(--accent); font-size:16px;">${item.title || 'Без названия'}</b><br>
                 <span style="font-size:14px; color:var(--muted);">${item.description || item.content || ''}</span>
-                ${item.file ? `<br><a href="${item.file}" target="_blank" class="btn" style="margin-top:8px; padding:6px 12px; font-size:12px;">📥 Open</a>` : ''}
+                ${item.file ? `<br><a href="${item.file}" target="_blank" class="btn" style="margin-top:8px; padding:6px 12px; font-size:12px;">📥 Открыть файл</a>` : ''}
             </div>`;
         });
     }
@@ -593,11 +602,11 @@ window.renderSimplePage = function(title, items, icon) {
 
 window.renderCertificatePage = function() {
     var app = window.$("app"); if (!app) return; app.innerHTML = "";
-    app.appendChild(el('<a class="backlink no-print" href="#/" style="color:var(--accent);">← Home</a>'));
+    app.appendChild(el('<a class="backlink no-print" href="#/" style="color:var(--accent);">← На главную</a>'));
     if (!window.state.student) return;
 
-    app.innerHTML += `<section class="module"><h2>📜 Certificate</h2>
-    <p>Your certificate will be generated here once you complete the course and pass the final exam.</p>
+    app.innerHTML += `<section class="module"><h2>📜 Сертификат</h2>
+    <p>Ваш сертификат будет сгенерирован здесь после завершения курса и сдачи экзамена.</p>
     <div style="padding:40px; text-align:center; border:2px dashed var(--border); border-radius:16px; margin-top:20px; position:relative;">
         <h1 style="font-size:48px; color:var(--gold); margin-bottom:10px;">CERTIFICATE</h1>
         <p style="font-size:20px;">This is to certify that</p>
@@ -609,7 +618,7 @@ window.renderCertificatePage = function() {
         ${!window.state.results['__final__' + window.state.activeCourseId] ? `<div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) rotate(-30deg); font-size:80px; font-weight:bold; color:rgba(255,0,0,0.1); pointer-events:none; z-index:10; white-space:nowrap;">SAMPLE</div>` : ''}
     </div>
     <div style="text-align:center; margin-top:20px;" class="no-print">
-        <button class="btn" onclick="window.print()" style="padding:12px 24px; font-size:16px; background:var(--gold); color:#000;">🖨️ Print Certificate</button>
+        <button class="btn" onclick="window.print()" style="padding:12px 24px; font-size:16px; background:var(--gold); color:#000;">🖨️ Распечатать</button>
     </div>
     </section>`;
 };
@@ -618,10 +627,10 @@ window.renderCertificatePage = function() {
 function renderHome() {
   var app = window.$("app"); app.innerHTML = "";
   var c = window.COURSE;
-  if (!c) { app.innerHTML = "<div class='module'>Error loading course data.</div>"; return; }
+  if (!c) { app.innerHTML = "<div class='module'>Ошибка загрузки данных курса.</div>"; return; }
   
   var html = '<section class="hero"><h1>' + window.escapeHtml(c.title) + '</h1><p>' + window.escapeHtml(c.module || "") + '</p></section>';
-  html += '<div class="steps-title">Curriculum</div>';
+  html += '<div class="steps-title">Учебный план</div>';
   
   (c.sections || []).forEach(sec => {
     html += '<div style="font-weight:bold; margin:20px 0 10px; color:var(--accent); text-transform:uppercase; font-size:12px;">' + window.escapeHtml(sec.title) + '</div>';
@@ -658,7 +667,7 @@ window.addEventListener("DOMContentLoaded", function() {
           if(window.renderShopPage) {
               location.hash = "#/shop";
               setTimeout(() => {
-                  window.showToast("Choose a theme in the 'Themes' section and press 'Apply'", "info");
+                  window.showToast("Выберите тему в разделе 'Темы оформления' и нажмите 'Применить'", "info");
               }, 300);
           }
       };
