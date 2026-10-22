@@ -12,7 +12,7 @@ window.GLOBAL_DATA = {
 window.GLOBAL_LESSONS = {
   newton: {
     title: "Isaac Newton - The Force of Genius",
-    videoUrl: "https://www.youtube.com/embed/xXc2XvTMu_0", // Рабочая ссылка на видео о Ньютоне
+    videoUrl: "10558453058157.mp4", // Локальный файл видео
     type: "gap-fill",
     text: `Isaac Newton, a(n) {1}, physicist and astronomer, was one of the scientific geniuses of his day and his work has had a lasting effect on the world we live in.
 He was born in England in 1643 and educated at Trinity College, Cambridge where he studied the scientific and philosophical writers that were revolutionizing the world of learning.
