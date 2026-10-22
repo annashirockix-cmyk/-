@@ -13,8 +13,11 @@ window.renderRatingPage = function() {
           return app.appendChild(el('<div class="module" style="text-align:center;">Пока нет данных для рейтинга.</div>'));
       }
 
-      // Парсинг и сортировка
-      var list = d.students.map(s => {
+      // Парсинг и сортировка, ИСКЛЮЧАЯ тестовые группы
+      var list = d.students.filter(s => {
+          var g = (s.group || "").toUpperCase();
+          return g !== "ТЕСТ" && g !== "TEST";
+      }).map(s => {
           var p = {}; try { p = JSON.parse(s.payload || "{}"); } catch(e){}
           return { 
               name: s.name, 
@@ -25,17 +28,27 @@ window.renderRatingPage = function() {
           };
       }).sort((a, b) => b.xp - a.xp);
 
-      // Функция для рендера аватара с маской
+      if (list.length === 0) {
+          return app.appendChild(el('<div class="module" style="text-align:center;">Нет реальных студентов для рейтинга.</div>'));
+      }
+
+      // Функция для рендера аватара (поддерживает и картинки, и эмодзи)
       var renderAv = (s, size, borderColor) => {
           var effClass = s.effect ? ` av-fx-${s.effect}` : "";
-          var avHtml = s.avatar ? `<img src="${s.avatar}" style="width:100%; height:100%; object-fit:cover;">` : "👨‍🎓";
-          return `<div class="av-container${effClass}" style="width:${size}px; height:${size}px; margin:0 auto; border:3px solid ${borderColor}; border-radius:50%; overflow:hidden; font-size:${size/2}px;">${avHtml}</div>`;
+          var avHtml = "👨‍🎓";
+          if (s.avatar) {
+              if (s.avatar.length <= 4 && !s.avatar.startsWith("http")) {
+                  avHtml = `<span style="font-size:${size/2}px;">${s.avatar}</span>`;
+              } else {
+                  avHtml = `<img src="${s.avatar}" style="width:100%; height:100%; object-fit:cover;">`;
+              }
+          }
+          return `<div class="av-container${effClass}" style="width:${size}px; height:${size}px; margin:0 auto; border:3px solid ${borderColor}; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; background:var(--card-soft);">${avHtml}</div>`;
       };
 
       // Подиум Топ-3
       var podiumHtml = '<div style="display:flex; justify-content:center; align-items:flex-end; gap:20px; margin-bottom:40px; height:260px; flex-wrap:wrap;">';
       
-      // 2 место
       if (list[1]) {
           podiumHtml += `<div style="text-align:center; width:120px;">
               <div style="font-size:50px; filter:drop-shadow(0 0 10px silver);">🥈</div>
@@ -45,7 +58,6 @@ window.renderRatingPage = function() {
           </div>`;
       }
       
-      // 1 место
       if (list[0]) {
           podiumHtml += `<div style="text-align:center; width:140px; transform:translateY(-30px);">
               <div style="font-size:70px; filter:drop-shadow(0 0 15px gold);">🥇</div>
@@ -55,7 +67,6 @@ window.renderRatingPage = function() {
           </div>`;
       }
       
-      // 3 место
       if (list[2]) {
           podiumHtml += `<div style="text-align:center; width:120px;">
               <div style="font-size:50px; filter:drop-shadow(0 0 10px #cd7f32);">🥉</div>
@@ -85,6 +96,6 @@ window.renderRatingPage = function() {
 
   }).catch(err => {
       console.error(err);
-      app.appendChild(el('<div class="module" style="color:var(--err);">Ошибка загрузки рейтинга.</div>'));
+      app.appendChild(el('<div class="module" style="color:var(--err);">Ошибка загрузки рейтинга (проверьте подключение к Google API).</div>'));
   });
 };
