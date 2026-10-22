@@ -12,6 +12,9 @@ const ACHIEVEMENTS = [
     { id: "perfect", title: "Идеально", desc: "Получить оценку 5", icon: "💯", check: (s) => Object.values(s.results).some(r => r.grade === 5) }
 ];
 
+// ДЕЛАЕМ СПИСОК ДОСТИЖЕНИЙ ГЛОБАЛЬНЫМ
+window.ACHIEVEMENTS = ACHIEVEMENTS;
+
 const THEMES = [
     { id: "default", title: "Стандартная", price: 0, color: "#ff6b3d", type: "theme" },
     { id: "neon", title: "Киберпанк", price: 500, color: "#ff00cc", type: "theme" },
@@ -80,7 +83,6 @@ window.renderShopPage = function() {
             var preview = "";
             if (type === 'theme') preview = `<div style="height:40px; border-radius:8px; background:${item.color}; margin-bottom:10px; border: 1px solid var(--border);"></div>`;
             if (type === 'avatar' && item.url && item.url !== 'url') {
-                // ПРОВЕРКА: если это эмодзи, рендерим текст, иначе картинку
                 if (item.url.length <= 5 && !item.url.startsWith("http")) {
                     preview = `<div style="font-size:40px; line-height:60px; margin-bottom:10px;">${item.url}</div>`;
                 } else {
