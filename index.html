@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>English Learning Portal</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📘</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>
+  try {
+    var savedTheme = localStorage.getItem("mdk.theme_active") || "default";
+    if (savedTheme !== "default") document.documentElement.setAttribute("data-theme", savedTheme);
+    else document.documentElement.setAttribute("data-theme", localStorage.getItem("mdk.theme") || "dark");
+  } catch(e) {}
+</script>
+<style>
+  @media print {
+    body * { visibility: hidden; }
+    #printable-cert, #printable-cert *, #printable-supplement, #printable-supplement * { visibility: visible; }
+    #printable-cert { position: absolute; left: 0; top: 0; width: 100%; page-break-after: always; margin: 0; padding: 0; box-shadow: none; border-radius: 0; background-size: 100% 100% !important; }
+    #printable-supplement { position: absolute; left: 0; top: 0; width: 100%; page-break-before: always; background-size: 100% 100% !important; }
+    .no-print { display: none !important; }
+    .topbar, .drawer, .drawer-overlay, .toast-container, #asFab { display: none !important; }
+    main#app { padding: 0 !important; margin: 0 !important; }
+    body { background: #fff; margin: 0; padding: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ОКНО ВХОДА -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-shell">
+    <div class="login-brand" style="text-align: center; margin-bottom: 20px;">
+      <span class="brand-badge">ENGLISH PORTAL</span>
+      <h1>English Learning Portal</h1>
+      <p>Basic English · Technical English</p>
+    </div>
+    <div class="login-grid">
+      <div class="login-card">
+        <h3>Student Login</h3>
+        <p class="login-hint">Enter your full name and group.</p>
+        <label>Full Name <input id="loginName" type="text" placeholder="Ivanov Ivan"></label>
+        <label>Group <input id="loginGroup" type="text" placeholder="TM-4"></label>
+        <button type="button" id="btnLoginStudent" class="btn" style="width: 100%; margin-top: 10px;">Sign in</button>
+      </div>
+      <div class="login-card">
+        <h3>Teacher Login</h3>
+        <p class="login-hint">Use <b>teacher / teacher</b> or <b>admin / admin</b></p>
+        <label>Login <input id="teacherUser" type="text" placeholder="teacher"></label>
+        <label>Password <input id="teacherPass" type="password" placeholder="teacher"></label>
+        <button type="button" id="btnLoginTeacher" class="btn ghost" style="width: 100%; margin-top: 10px;">Sign in</button>
+        <p class="login-error" id="teacherLoginError" style="display:none; color:var(--err); margin-top:10px; font-size:13px;"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ШАПКА -->
+<header class="topbar">
+  <button class="burger-btn" id="burgerBtn" aria-label="Menu"><span></span><span></span><span></span></button>
+  <a class="brand" href="#/"><span class="brand-badge">English Portal</span></a>
+  <div style="margin-left: 15px;">
+    <select id="mdkSelector" class="self-input" style="padding: 8px; font-weight: bold; background: var(--card-soft); border: 1px solid var(--accent); color: var(--accent); border-radius: 6px; outline:none; margin:0; width:auto;">
+      <option value="basic">Basic English (10–11)</option>
+      <option value="technical">Technical English (SPO)</option>
+    </select>
+  </div>
+  <div class="crumbs" id="crumbs" style="margin-left:auto;"></div>
+  <div class="topbar-status"><span class="status-pill" id="xpCount">⭐ 0 XP</span></div>
+  <button id="themeToggle" class="btn ghost" style="padding: 8px 12px; margin-left: 5px;" title="Theme">🎨</button>
+  <button id="topbarLogout" class="btn ghost" style="padding:8px 12px; margin-left:5px;" onclick="window.handleLogout()" title="Logout">🚪</button>
+</header>
+
+<!-- БОКОВОЕ МЕНЮ (без журнала) -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="drawer-user" style="display:flex; align-items:center;">
+      <span id="userChipAvatar" style="font-size:24px;">👨‍🎓</span>
+      <div style="margin-left:10px;">
+        <div id="userChipName" style="font-weight:bold;">Guest</div>
+        <div id="userChipGroup" style="font-size:12px; color:var(--muted);">Group</div>
+      </div>
+    </div>
+    <button class="drawer-close" id="drawerClose">✕</button>
+  </div>
+  <nav class="drawer-nav">
+    <a class="drawer-item" data-go="#/">🏠 Home</a>
+    <a class="drawer-item" data-go="#/profile">👤 Profile</a>
+    <a class="drawer-item" data-go="#/certificate">📜 Certificate</a>
+    <a class="drawer-item" data-go="#/achievements">🏆 Achievements</a>
+    <a class="drawer-item" data-go="#/shop">🛒 Shop</a>
+    <a class="drawer-item" data-go="#/videos">🎬 Videos</a>
+    <a class="drawer-item" data-go="#/passports">📄 Materials</a>
+    <a class="drawer-item" data-go="#/safety">🦺 Safety Rules</a>
+    <a class="drawer-item" data-go="#/formatting">📝 Formatting</a>
+    <a class="drawer-item" data-go="#/links">📚 Useful Links</a>
+    <a class="drawer-item" data-go="#/training">🎯 Quiz (Training)</a>
+    <a class="drawer-item" data-go="#/final">📋 Final Exam</a>
+    <a class="drawer-item" data-go="#/arcade">🃏 Flashcards &amp; Crossword</a>
+    <a class="drawer-item" data-go="#/rating">🏅 Leaderboard</a>
+    <a class="drawer-item" data-go="#/reports">📊 Reports</a>
+    <a class="drawer-item" data-go="#/schedule">📅 Schedule</a>
+    <a class="drawer-item" style="color:var(--err); cursor:pointer; margin-top:20px; border-top: 1px solid var(--border);" onclick="window.handleLogout()">🚪 Logout</a>
+  </nav>
+</aside>
+
+<main id="app"></main>
+
+<!-- СКРИПТЫ -->
+<script src="data-global.js"></script>
+<script src="data-basic.js"></script>
+<script src="data-technical.js"></script>
+
+<script src="api.js"></script>
+<script src="tests-extra.js"></script>
+
+<script src="app.js"></script>
+
+<script src="exam-basic.js"></script>
+<script src="exam-technical.js"></script>
+<script src="shop.js"></script>
+<script src="reports.js"></script>
+<script src="extra.js"></script>
+<script src="info.js"></script>
+<script src="links.js"></script>
+<script src="rating.js"></script>
+<script src="schedule.js"></script>
+
+<script src="flashcards.js"></script>
+<script src="assistant.js"></script>
+
+</body>
+</html>
