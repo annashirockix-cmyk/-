@@ -3,16 +3,62 @@
 window.GLOBAL_DATA = {
   videos: [],
   passports: [
-    { title: "English Grammar Guide (PDF)", description: "Comprehensive guide to English tenses, conditionals, and modals.", file: "materials/grammar.pdf" },
-    { title: "Technical Vocabulary Dictionary (PDF)", description: "Dictionary of engineering, lathe, and CNC terms.", file: "materials/vocabulary.pdf" },
-    { title: "Irregular Verbs List", description: "Complete list of irregular verbs with translations.", file: "materials/irregular_verbs.pdf" }
+    { 
+      title: "English Grammar Guide", 
+      description: "Краткий справочник по временам, условным предложениям и модальным глаголам.", 
+      content: `
+        <h4>1. Времена (Tenses)</h4>
+        <p><b>Present Simple</b> — регулярные действия (I work every day).<br>
+        <b>Past Simple</b> — единичные действия в прошлом (I worked yesterday).<br>
+        <b>Present Perfect</b> — действие завершено к моменту речи, есть результат (I have done my homework).</p>
+        <h4>2. Условные предложения (Conditionals)</h4>
+        <p><b>Type I (Реальные):</b> If it rains, I will stay at home.<br>
+        <b>Type II (Маловероятные):</b> If I had money, I would buy a car.<br>
+        <b>Type III (Нереальные в прошлом):</b> If I had studied, I would have passed the exam.</p>
+        <h4>3. Модальные глаголы</h4>
+        <p><b>Can</b> — физическая возможность.<br><b>Must</b> — строгая обязанность.<br><b>Should</b> — мягкий совет.</p>
+      `
+    },
+    { 
+      title: "Technical Vocabulary Dictionary", 
+      description: "Словарь технических терминов, станков и ЧПУ.", 
+      content: `
+        <ul>
+          <li><b>Lathe</b> — токарный станок</li>
+          <li><b>Milling machine</b> — фрезерный станок</li>
+          <li><b>Spindle</b> — шпиндель</li>
+          <li><b>Chuck</b> — патрон (для зажима детали)</li>
+          <li><b>Tolerance</b> — допуск (например, Ø50 ±0.05)</li>
+          <li><b>Workpiece</b> — заготовка</li>
+          <li><b>Cutting tool</b> — режущий инструмент</li>
+          <li><b>CNC (Computer Numerical Control)</b> — ЧПУ</li>
+        </ul>
+      `
+    },
+    { 
+      title: "Irregular Verbs List (TOP-50)", 
+      description: "Основные неправильные глаголы английского языка.", 
+      content: `
+        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:14px; margin-top:10px;">
+          <tr style="background:var(--card-soft);"><th style="padding:5px; border:1px solid var(--border);">Infinitive (V1)</th><th style="padding:5px; border:1px solid var(--border);">Past (V2)</th><th style="padding:5px; border:1px solid var(--border);">Participle II (V3)</th></tr>
+          <tr><td style="padding:5px; border:1px solid var(--border);">be</td><td style="padding:5px; border:1px solid var(--border);">was/were</td><td style="padding:5px; border:1px solid var(--border);">been</td></tr>
+          <tr><td style="padding:5px; border:1px solid var(--border);">become</td><td style="padding:5px; border:1px solid var(--border);">became</td><td style="padding:5px; border:1px solid var(--border);">become</td></tr>
+          <tr><td style="padding:5px; border:1px solid var(--border);">begin</td><td style="padding:5px; border:1px solid var(--border);">began</td><td style="padding:5px; border:1px solid var(--border);">begun</td></tr>
+          <tr><td style="padding:5px; border:1px solid var(--border);">break</td><td style="padding:5px; border:1px solid var(--border);">broke</td><td style="padding:5px; border:1px solid var(--border);">broken</td></tr>
+          <tr><td style="padding:5px; border:1px solid var(--border);">build</td><td style="padding:5px; border:1px solid var(--border);">built</td><td style="padding:5px; border:1px solid var(--border);">built</td></tr>
+          <tr><td style="padding:5px; border:1px solid var(--border);">do</td><td style="padding:5px; border:1px solid var(--border);">did</td><td style="padding:5px; border:1px solid var(--border);">done</td></tr>
+          <tr><td style="padding:5px; border:1px solid var(--border);">go</td><td style="padding:5px; border:1px solid var(--border);">went</td><td style="padding:5px; border:1px solid var(--border);">gone</td></tr>
+          <tr><td style="padding:5px; border:1px solid var(--border);">write</td><td style="padding:5px; border:1px solid var(--border);">wrote</td><td style="padding:5px; border:1px solid var(--border);">written</td></tr>
+        </table>
+      `
+    }
   ]
 };
 
 window.GLOBAL_LESSONS = {
   newton: {
     title: "Isaac Newton - The Force of Genius",
-    videoUrl: "10558453058157.mp4", // Локальный файл видео
+    videoUrl: "10558453058157.mp4",
     type: "gap-fill",
     text: `Isaac Newton, a(n) {1}, physicist and astronomer, was one of the scientific geniuses of his day and his work has had a lasting effect on the world we live in.
 He was born in England in 1643 and educated at Trinity College, Cambridge where he studied the scientific and philosophical writers that were revolutionizing the world of learning.
