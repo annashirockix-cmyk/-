@@ -24,16 +24,17 @@ const THEMES = [
     { id: "tea-time", title: "Tea Time ☕", price: 900, color: "#f8bbd0", type: "theme" }
 ];
 
+// ИСПОЛЬЗУЕМ ЭМОДЗИ ВМЕСТО ССЫЛОК, ЧТОБЫ КАРТИНКИ НЕ ЛОМАЛИСЬ
 const AVATARS = [
     { id: "default", url: null, price: 0, title: "Стандартный" },
-    { id: "av1", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix", price: 200, title: "Парень" },
-    { id: "av2", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka", price: 200, title: "Девушка" },
-    { id: "av3", url: "https://api.dicebear.com/7.x/bottts/svg?seed=Robo", price: 300, title: "Робот" },
+    { id: "av1", url: "👦", price: 200, title: "Парень" },
+    { id: "av2", url: "👧", price: 200, title: "Девушка" },
+    { id: "av3", url: "🤖", price: 300, title: "Робот" },
     { id: "custom", url: "url", price: 500, title: "Свой URL" },
-    { id: "sherlock_av", url: "https://api.dicebear.com/7.x/personas/svg?seed=Sherlock&hair=short02&accessories=glasses", price: 800, title: "Шерлок" },
-    { id: "queen_av", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Queen&top=crown&clothing=blazerAndShirt", price: 800, title: "Королева" },
-    { id: "guard_av", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Guard&hat=hat&clothing=overalls", price: 600, title: "Гвардеец" },
-    { id: "bus_av", url: "https://api.dicebear.com/7.x/bottts/svg?seed=Bus&baseColor=red", price: 400, title: "Красный автобус" }
+    { id: "sherlock_av", url: "🕵️‍♂️", price: 800, title: "Шерлок" },
+    { id: "queen_av", url: "👸", price: 800, title: "Королева" },
+    { id: "guard_av", url: "💂‍♂️", price: 600, title: "Гвардеец" },
+    { id: "bus_av", url: "🚌", price: 400, title: "Красный автобус" }
 ];
 
 const EFFECTS = [
@@ -79,7 +80,13 @@ window.renderShopPage = function() {
 
             var preview = "";
             if (type === 'theme') preview = `<div style="height:40px; border-radius:8px; background:${item.color}; margin-bottom:10px; border: 1px solid var(--border);"></div>`;
-            if (type === 'avatar' && item.url && item.url !== 'url') preview = `<img src="${item.url}" style="width:60px; height:60px; border-radius:50%; margin:0 auto 10px; display:block; background:var(--card-soft);">`;
+            if (type === 'avatar' && item.url && item.url !== 'url') {
+                if (item.url.length <= 4 && !item.url.startsWith("http")) {
+                    preview = `<div style="font-size:40px; line-height:60px; margin-bottom:10px;">${item.url}</div>`;
+                } else {
+                    preview = `<img src="${item.url}" style="width:60px; height:60px; border-radius:50%; margin:0 auto 10px; display:block; background:var(--card-soft);">`;
+                }
+            }
             if (type === 'effect') preview = `<div style="height:40px; width:40px; border-radius:50%; background:var(--card); margin:0 auto 10px; ${item.css}"></div>`;
 
             html += `<div class="module" style="padding:15px; text-align:center;">
@@ -140,7 +147,15 @@ window.renderProfilePage = function() {
 
   var lvl = window.getLevel(window.state.xp);
   var effCss = window.state.effect && window.state.effect !== 'none' ? EFFECTS.find(e => e.id === window.state.effect).css : "";
-  var avHtml = window.state.avatar ? `<img src="${window.state.avatar}" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">` : "👨‍🎓";
+  
+  var avHtml = "👨‍🎓";
+  if (window.state.avatar) {
+      if (window.state.avatar.length <= 4 && !window.state.avatar.startsWith("http")) {
+          avHtml = `<span style="font-size:60px;">${window.state.avatar}</span>`;
+      } else {
+          avHtml = `<img src="${window.state.avatar}" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">`;
+      }
+  }
 
   var resultsHtml = "";
   var results = window.state.results || {};
