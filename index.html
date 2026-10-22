@@ -29,7 +29,6 @@
 </head>
 <body>
 
-<!-- ОКНО ВХОДА -->
 <div class="login-overlay" id="loginOverlay">
   <div class="login-shell">
     <div class="login-brand" style="text-align: center; margin-bottom: 20px;">
@@ -37,7 +36,6 @@
       <h1>Портал изучения английского языка</h1>
       <p>Basic English · Technical English</p>
     </div>
-    
     <div class="login-grid">
       <div class="login-card">
         <h3>Вход студента</h3>
@@ -46,7 +44,6 @@
         <label>Группа <input id="loginGroup" type="text" placeholder="ТМ-4"></label>
         <button type="button" id="btnLoginStudent" class="btn" style="width: 100%; margin-top: 10px;">Войти</button>
       </div>
-
       <div class="login-card">
         <h3>Вход преподавателя</h3>
         <p class="login-hint">Используйте <b>teacher / teacher</b> или <b>admin / admin</b></p>
@@ -59,29 +56,21 @@
   </div>
 </div>
 
-<!-- ШАПКА -->
 <header class="topbar">
   <button class="burger-btn" id="burgerBtn" aria-label="Меню"><span></span><span></span><span></span></button>
   <a class="brand" href="#/"><span class="brand-badge">Английский портал</span></a>
-  
   <div style="margin-left: 15px;">
       <select id="mdkSelector" class="self-input" style="padding: 8px; font-weight: bold; background: var(--card-soft); border: 1px solid var(--accent); color: var(--accent); border-radius: 6px; outline:none; margin:0; width:auto;">
           <option value="basic">Базовый английский (10–11)</option>
           <option value="technical">Технический английский (СПО)</option>
       </select>
   </div>
-
   <div class="crumbs" id="crumbs" style="margin-left:auto;"></div>
-  
-  <div class="topbar-status">
-    <span class="status-pill" id="xpCount">🌟 0 XP</span>
-  </div>
-  
+  <div class="topbar-status"><span class="status-pill" id="xpCount">🌟 0 XP</span></div>
   <button id="themeToggle" class="btn ghost" style="padding: 8px 12px; margin-left: 5px;" title="Сменить тему">🎨</button>
   <button id="topbarLogout" class="btn ghost" style="padding:8px 12px; margin-left:5px;" onclick="window.handleLogout()" title="Выйти">🚪</button>
 </header>
 
-<!-- БОКОВОЕ МЕНЮ -->
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer">
   <div class="drawer-head">
@@ -94,17 +83,15 @@
     </div>
     <button class="drawer-close" id="drawerClose">✕</button>
   </div>
-  
   <nav class="drawer-nav">
     <a class="drawer-item" data-go="#/">🏠 Главная</a>
     <a class="drawer-item" data-go="#/profile">👤 Личный кабинет</a>
     <a class="drawer-item" data-go="#/certificate">📜 Мой сертификат</a>
     <a class="drawer-item" data-go="#/achievements">🏆 Достижения</a>
     <a class="drawer-item" data-go="#/shop">🛒 Магазин</a>
-    <a class="drawer-item" data-go="#/videos">🎬 Видео</a>
+    <a class="drawer-item" data-go="#/videos">🎬 Видео и Презентации</a>
     <a class="drawer-item" data-go="#/passports">📄 Материалы</a>
     <a class="drawer-item" data-go="#/safety">🦺 Охрана труда</a>
-    <a class="drawer-item" data-go="#/formatting">📝 Оформление</a>
     <a class="drawer-item" data-go="#/links">📚 Полезные ссылки</a>
     <a class="drawer-item" data-go="#/training">🎯 Тренировка</a>
     <a class="drawer-item" data-go="#/final">📋 Итоговый экзамен</a>
@@ -116,19 +103,14 @@
   </nav>
 </aside>
 
-<!-- ОСНОВНОЙ КОНТЕНТ -->
 <main id="app"></main>
 
-<!-- СКРИПТЫ (Порядок важен!) -->
 <script src="data-global.js"></script>
 <script src="data-basic.js"></script>
 <script src="data-technical.js"></script>
-
 <script src="api.js"></script>
 <script src="tests-extra.js"></script> 
-
 <script src="app.js"></script>
-
 <script src="exam-basic.js"></script>
 <script src="exam-technical.js"></script>
 <script src="shop.js"></script>
@@ -138,9 +120,7 @@
 <script src="links.js"></script>
 <script src="rating.js"></script>
 <script src="schedule.js"></script>
-
 <script src="flashcards.js"></script>
 <script src="assistant.js"></script>
-
 </body>
 </html>
