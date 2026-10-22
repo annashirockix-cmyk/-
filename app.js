@@ -19,7 +19,7 @@ window.showToast = function(msg, type) {
 };
 
 /* ============================================================
-   ДАННЫЕ КОНСТРУКТОРА
+   ДАННЫЕ КОНСТРУКТОРА (Преподаватель)
    ============================================================ */
 window.getCustomData = function() {
     try { return JSON.parse(localStorage.getItem("mdk.custom_data")) || { flashcards: [], tests: [] }; }
@@ -81,7 +81,9 @@ window.saveStudentData = function() {
         unlockedAchievements: window.state.unlockedAchievements || [],
         avatar: window.state.avatar || null, effect: window.state.effect || null
       })
-    ).catch(() => {});
+    ).catch((err) => {
+        console.warn("Не удалось сохранить данные на сервере (Google API):", err);
+    });
   }
 };
 
@@ -121,7 +123,8 @@ window.doTeacherLogin = function() {
   var errEl = window.$("teacherLoginError");
   if (!u || !p) { errEl.textContent = "Введите логин и пароль"; errEl.style.display = "block"; return; }
   if ((u === "admin" && p === "admin") || (u === "teacher" && p === "teacher")) {
-      window.state.staff = { name: u === "admin" ? "Администратор" : "Анна Анатольевна", role: u === "admin" ? "admin" : "teacher" };
+      // Имя преподавателя обновлено
+      window.state.staff = { name: u === "admin" ? "Администратор" : "Лазутина Ольга Валерьевна", role: u === "admin" ? "admin" : "teacher" };
       window.state.student = null; window.state.xp = 999999;
       try { localStorage.setItem("mdk.staff", JSON.stringify(window.state.staff)); localStorage.removeItem("mdk.student"); } catch(e){}
       
@@ -161,8 +164,8 @@ window.renderUserChip = function() {
   
   var avHtml = "👨‍🎓";
   if (window.state.avatar) {
-      // Если аватар - эмодзи
-      if (window.state.avatar.length <= 4 && !window.state.avatar.startsWith("http")) {
+      // Если аватар - эмодзи (короткая строка)
+      if (window.state.avatar.length <= 5 && !window.state.avatar.startsWith("http")) {
           avHtml = `<span style="font-size:24px;">${window.state.avatar}</span>`;
       } else {
           avHtml = `<img src="${window.state.avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
@@ -206,15 +209,17 @@ window.route = function() {
     else if (page === "schedule" && window.renderSchedulePage) window.renderSchedulePage();
     else if (page === "achievements") window.renderAchievementsPage();
     else if (page === "constructor") window.renderConstructorPage();
+    else if (page === "group-certificate") window.renderTeacherGroupCertificate();
     else renderHome();
   } catch (err) {
     app.innerHTML = '<div class="module" style="color:var(--err);">Ошибка: ' + window.escapeHtml(err.message) + '</div>';
+    console.error(err);
   }
   window.scrollTo(0, 0);
 };
 
 /* ============================================================
-   НОВЫЕ СТРАНИЦЫ (Материалы и Достижения)
+   НОВЫЕ СТРАНИЦЫ (Материалы, Достижения, Сертификаты)
    ============================================================ */
 window.renderSimplePage = function(title, data, icon) {
     var app = window.$("app"); if (!app) return; app.innerHTML = "";
@@ -226,10 +231,10 @@ window.renderSimplePage = function(title, data, icon) {
         list.innerHTML = '<p style="color:var(--muted);">Пока нет доступных материалов.</p>';
     } else {
         data.forEach(item => {
-            list.innerHTML += `<div style="margin-bottom:15px; padding:15px; background:var(--card-soft); border-radius:8px; border:1px solid var(--border);">
-                <h4 style="margin:0 0 5px 0; color:var(--accent);">${window.escapeHtml(item.title)}</h4>
-                <p style="margin:0 0 10px 0; font-size:14px; color:var(--text-soft);">${window.escapeHtml(item.description)}</p>
-                <a href="${item.file}" download class="btn ghost" style="padding:6px 12px; font-size:12px;">⬇️ Скачать</a>
+            list.innerHTML += `<div style="margin-bottom:20px; padding:20px; background:var(--card-soft); border-radius:12px; border:1px solid var(--border);">
+                <h3 style="margin:0 0 10px 0; color:var(--accent); font-size:18px;">${window.escapeHtml(item.title)}</h3>
+                <p style="margin:0 0 15px 0; font-size:14px; color:var(--text-soft);">${window.escapeHtml(item.description)}</p>
+                <div style="line-height:1.6; font-size:15px;">${item.content}</div>
             </div>`;
         });
     }
@@ -261,6 +266,62 @@ window.renderAchievementsPage = function() {
     app.appendChild(grid);
 };
 
+window.renderTeacherGroupCertificate = function() {
+    var app = window.$("app"); if (!app) return; app.innerHTML = "";
+    if (!window.state.staff) { app.innerHTML = '<div class="module" style="color:var(--err);">Доступ только для преподавателя.</div>'; return; }
+    
+    app.appendChild(el('<a class="backlink no-print" href="#/reports" style="color:var(--accent);">← Назад к отчетам</a>'));
+
+    window.API.getStudents().then(d => {
+        if (!d || !d.ok || !d.students) { app.innerHTML += '<div class="module" style="color:var(--err);">Ошибка загрузки данных.</div>'; return; }
+        
+        var groups = {};
+        d.students.forEach(s => {
+            if (!groups[s.group]) groups[s.group] = [];
+            var p = {}; try { p = JSON.parse(s.payload || "{}"); } catch(e){}
+            groups[s.group].push({ name: s.name, xp: p.xp || 0 });
+        });
+
+        var html = `<div class="no-print" style="margin-bottom:20px; text-align:center;">
+            <button class="btn" onclick="window.print()" style="padding:15px 30px; font-size:18px; background:var(--gold); color:#000;">🖨️ Распечатать сертификаты</button>
+        </div>`;
+
+        Object.keys(groups).forEach(groupName => {
+            if (groupName === "ТЕСТ" || groupName === "TEST") return; 
+            
+            var students = groups[groupName].sort((a, b) => b.xp - a.xp);
+            var totalXP = students.reduce((sum, s) => sum + s.xp, 0);
+            var avgXP = Math.round(totalXP / students.length);
+            
+            html += `
+            <div class="module" style="page-break-after: always; background:#fff; color:#000; padding:40px; border: 10px solid #c14a2a; margin-bottom:30px; text-align:center; border-radius:12px;">
+                <h1 style="font-size:36px; color:#c14a2a; text-transform:uppercase; margin-bottom:10px;">СЕРТИФИКАТ ГРУППЫ</h1>
+                <h2 style="font-size:28px; margin-bottom:20px;">Группа: ${window.escapeHtml(groupName)}</h2>
+                <p style="font-size:18px; margin-bottom:10px;">Общий опыт: <b>${totalXP} XP</b></p>
+                <p style="font-size:18px; margin-bottom:30px;">Средний опыт: <b>${avgXP} XP</b></p>
+                
+                <table style="width:100%; max-width:600px; margin:0 auto; border-collapse:collapse; font-size:16px;">
+                    <tr style="background:#eee;"><th style="border:1px solid #000; padding:8px;">Место</th><th style="border:1px solid #000; padding:8px;">ФИО Студента</th><th style="border:1px solid #000; padding:8px;">Опыт</th></tr>
+                    ${students.map((s, i) => `<tr>
+                        <td style="border:1px solid #000; padding:8px; font-weight:bold;">${i+1}</td>
+                        <td style="border:1px solid #000; padding:8px; text-align:left;">${window.escapeHtml(s.name)}</td>
+                        <td style="border:1px solid #000; padding:8px;">${s.xp}</td>
+                    </tr>`).join("")}
+                </table>
+                
+                <div style="display:flex; justify-content:space-between; margin-top:50px; font-size:16px;">
+                    <div style="text-align:left;"><p>Преподаватель:</p><p style="font-weight:bold;">Лазутина Ольга Валерьевна</p></div>
+                    <div style="text-align:right;"><p>Дата выдачи:</p><p style="font-weight:bold;">${new Date().toLocaleDateString('ru-RU')}</p></div>
+                </div>
+            </div>`;
+        });
+        
+        app.innerHTML += html;
+    }).catch(err => {
+        app.innerHTML += '<div class="module" style="color:var(--err);">Ошибка сети. Проверьте подключение к Google API.</div>';
+    });
+};
+
 /* ============================================================
    КОНСТРУКТОР ТЕСТОВ
    ============================================================ */
@@ -280,7 +341,6 @@ window.renderConstructorPage = function() {
     var data = window.getCustomData();
     var globalTime = localStorage.getItem("mdk.global_time") || "10";
 
-    // ВРЕМЯ НА ТЕСТЫ
     var timeHtml = `
         <div class="module" style="border-left:4px solid var(--accent); margin-bottom:24px;">
             <h3 style="margin-top:0;">⏱️ Глобальное время на тесты</h3>
@@ -293,7 +353,6 @@ window.renderConstructorPage = function() {
     `;
     app.appendChild(el(timeHtml));
 
-    // КАРТОЧКИ
     var cardHtml = `
         <div class="module" style="border-left:4px solid var(--accent);">
             <h3 style="margin-top:0;">🃏 Добавить карточку</h3>
@@ -315,7 +374,6 @@ window.renderConstructorPage = function() {
     `;
     app.appendChild(el(cardHtml));
 
-    // ТЕСТЫ
     var testHtml = `
         <div class="module" style="border-left:4px solid var(--gold); margin-top:24px;">
             <h3 style="margin-top:0;">📝 Создать тест</h3>
@@ -616,14 +674,14 @@ window.renderTrainingPage = function(mdkId) {
         if (questions.length > 0) {
             grid.appendChild(el(`<div class="module" style="cursor:pointer; border-left:4px solid var(--accent);" onclick="location.hash='#/training/standard'">
                 <h3 style="margin-top:0;">Стандартный тест</h3>
-                <p style="color:var(--muted); font-size:14px;">${questions.length} вопросов · ${globalTime} мин</p>
+                <p style="color:var(--muted); font-size:14px;">${questions.length} вопросов · ${globalTime > 0 ? globalTime + ' мин' : 'без времени'}</p>
             </div>`));
         }
 
         customData.tests.forEach(t => {
             grid.appendChild(el(`<div class="module" style="cursor:pointer; border-left:4px solid var(--gold);" onclick="window.startCustomTest('${t.id}')">
                 <h3 style="margin-top:0;">${window.escapeHtml(t.title)}</h3>
-                <p style="color:var(--muted); font-size:14px;">${t.questions.length} вопросов · ${t.time} мин</p>
+                <p style="color:var(--muted); font-size:14px;">${t.questions.length} вопросов · ${t.time > 0 ? t.time + ' мин' : 'без времени'}</p>
             </div>`));
         });
 
@@ -663,7 +721,7 @@ window.startCustomTest = function(testId) {
 };
 
 /* ============================================================
-   СЕРТИФИКАТ
+   СЕРТИФИКАТ (Личный)
    ============================================================ */
 window.renderCertificatePage = function() {
     var app = window.$("app"); if (!app) return; app.innerHTML = "";
