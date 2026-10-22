@@ -1,6 +1,6 @@
 "use strict";
 
-// ========== ГЛАВНАЯ СТРАНИЦА ==========
+// ========== ГЛАВНАЯ СТРАНИЦА КАРТОЧЕК ==========
 window.renderArcadePage = function () {
   var app = document.getElementById("app");
   if (!app) return;
@@ -11,17 +11,18 @@ window.renderArcadePage = function () {
 
   var courseId = window.state.activeCourseId;
   var data = window.MDK_DATA && window.MDK_DATA[courseId];
-  if (!data || !data.flashcards) {
-    app.appendChild(el('<div class="module">No flashcards for this course yet.</div>'));
-    return;
-  }
+  
+  // Считаем общее количество карточек (базовые + кастомные)
+  var baseCards = data && data.flashcards ? (courseId === "technical" ? data.flashcards.technical : data.flashcards.basic) || [] : [];
+  var customData = window.getCustomData ? window.getCustomData() : { flashcards: [] };
+  var totalCards = baseCards.length + customData.flashcards.length;
 
   var grid = el('<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px;"></div>');
 
   // Карточки
   grid.appendChild(el(`<div class="module" style="cursor:pointer; transition:0.2s;" onclick="window.startFlashcards()" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
     <h3 style="margin-top:0; color:var(--accent);">🃏 Flashcards</h3>
-    <p style="color:var(--muted); font-size:14px;">Flip cards to memorize words and translations. ${data.flashcards.basic ? data.flashcards.basic.length : (data.flashcards.technical ? data.flashcards.technical.length : 0)} words in this set.</p>
+    <p style="color:var(--muted); font-size:14px;">Flip cards to memorize words and translations. ${totalCards} words in this set.</p>
     <button class="btn ghost" style="width:100%; margin-top:15px;">Start</button>
   </div>`));
 
@@ -43,9 +44,16 @@ window.startFlashcards = function () {
 
   var courseId = window.state.activeCourseId;
   var course = window.MDK_DATA[courseId];
-  if (!course || !course.flashcards) { app.appendChild(el('<div class="module">No flashcards.</div>')); return; }
+  
+  // Базовые карточки
+  var baseCards = course && course.flashcards ? (courseId === "technical" ? course.flashcards.technical : course.flashcards.basic) : [];
+  
+  // Кастомные карточки (добавленные учителем)
+  var customData = window.getCustomData ? window.getCustomData() : { flashcards: [] };
+  var cards = (baseCards || []).concat(customData.flashcards);
+  
+  if (cards.length === 0) { app.appendChild(el('<div class="module">No flashcards yet.</div>')); return; }
 
-  var cards = courseId === "technical" ? course.flashcards.technical : course.flashcards.basic;
   var idx = 0;
   var flipped = false;
 
@@ -93,9 +101,7 @@ window.startCrossword = function () {
   var SIZE = 15;
   var grid = Array(SIZE).fill().map(() => Array(SIZE).fill(""));
   var placed = [];
-  var score = 0;
 
-  // Простой алгоритм размещения слов
   function tryPlace(word, dir) {
     for (var attempt = 0; attempt < 200; attempt++) {
       var r = Math.floor(Math.random() * SIZE);
@@ -121,7 +127,6 @@ window.startCrossword = function () {
     return false;
   }
 
-  // Сортируем по убыванию длины
   var sorted = words.slice().sort((a, b) => b.word.length - a.word.length);
   sorted.forEach((w, i) => {
     var dir = i % 2 === 0 ? "H" : "V";
@@ -161,7 +166,6 @@ window.startCrossword = function () {
   wrap.appendChild(table);
   app.appendChild(wrap);
 
-  // Список слов
   var list = el('<div class="module"><h3>Clues</h3><div id="clueList"></div></div>');
   var clueList = list.querySelector("#clueList");
   placed.forEach((p, i) => {
@@ -169,7 +173,6 @@ window.startCrossword = function () {
   });
   app.appendChild(list);
 
-  // Проверка
   var checkBtn = el('<button class="btn" style="width:100%; padding:15px; margin-top:15px;">✅ Check Answers</button>');
   app.appendChild(checkBtn);
   var result = el('<div id="crosswordResult" style="text-align:center; font-size:18px; font-weight:bold; margin-top:15px;"></div>');

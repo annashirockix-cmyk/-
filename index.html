@@ -101,7 +101,11 @@
     <div style="margin:12px 20px 6px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px;">Дополнительно</div>
     <a class="drawer-item" data-go="#/arcade">🃏 Карточки и кроссворд</a>
     <a class="drawer-item" data-go="#/rating">🏅 Доска почета</a>
-    <a class="drawer-item" data-go="#/reports">📊 Отчеты (для преподавателя)</a>
+    
+    <!-- Пункты только для преподавателя -->
+    <a class="drawer-item" data-go="#/constructor" id="menuConstructor" style="display:none; color:var(--gold);">🛠 Конструктор тестов</a>
+    <a class="drawer-item" data-go="#/reports" id="menuReports" style="display:none;">📊 Отчеты</a>
+    
     <a class="drawer-item" data-go="#/schedule">📅 Расписание</a>
     <a class="drawer-item" style="color:var(--err); cursor:pointer; margin-top:20px; border-top: 1px solid var(--border);" onclick="window.handleLogout()">🚪 Выйти</a>
   </nav>
@@ -131,5 +135,17 @@
 <script src="schedule.js"></script>
 <script src="flashcards.js"></script>
 <script src="assistant.js"></script>
+
+<!-- Скрипт для отображения меню преподавателя -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    if (window.state && window.state.staff) {
+      var c = document.getElementById("menuConstructor");
+      var r = document.getElementById("menuReports");
+      if (c) c.style.display = "flex";
+      if (r) r.style.display = "flex";
+    }
+  });
+</script>
 </body>
 </html>

@@ -19,6 +19,15 @@ window.showToast = function(msg, type) {
 };
 
 /* ============================================================
+   ДАННЫЕ КОНСТРУКТОРА (Преподаватель)
+   ============================================================ */
+window.getCustomData = function() {
+    try { return JSON.parse(localStorage.getItem("mdk.custom_data")) || { flashcards: [], tests: [] }; }
+    catch(e) { return { flashcards: [], tests: [] }; }
+};
+window.saveCustomData = function(data) { localStorage.setItem("mdk.custom_data", JSON.stringify(data)); };
+
+/* ============================================================
    СОСТОЯНИЕ
    ============================================================ */
 window.state = {
@@ -107,6 +116,12 @@ window.doTeacherLogin = function() {
       window.state.staff = { name: u === "admin" ? "Администратор" : "Анна Анатольевна", role: u === "admin" ? "admin" : "teacher" };
       window.state.student = null; window.state.xp = 999999;
       try { localStorage.setItem("mdk.staff", JSON.stringify(window.state.staff)); localStorage.removeItem("mdk.student"); } catch(e){}
+      
+      var c = document.getElementById("menuConstructor");
+      var r = document.getElementById("menuReports");
+      if (c) c.style.display = "flex";
+      if (r) r.style.display = "flex";
+
       window.renderUserChip(); window.updateXpDisplay(); window.route();
   } else { errEl.textContent = "Неверный логин или пароль"; errEl.style.display = "block"; }
 };
@@ -115,6 +130,12 @@ window.handleLogout = function() {
   if (!confirm("Выйти из системы?")) return;
   window.state.student = null; window.state.staff = null; window.state.xp = 0;
   try { localStorage.removeItem("mdk.student"); localStorage.removeItem("mdk.staff"); } catch(e){}
+  
+  var c = document.getElementById("menuConstructor");
+  var r = document.getElementById("menuReports");
+  if (c) c.style.display = "none";
+  if (r) r.style.display = "none";
+
   window.closeDrawer(); window.route();
 };
 
@@ -153,10 +174,7 @@ window.route = function() {
     else if (page === "profile" && window.renderProfilePage) window.renderProfilePage();
     else if (page === "videos") window.renderVideoPage(parts[1]);
     else if (page === "passports") window.renderSimplePage("Учебные материалы", window.GLOBAL_DATA?.passports, "📄");
-    else if (page === "training") {
-      if (window.state.activeCourseId === "basic" && window.renderTraining_basic) window.renderTraining_basic(parts[1]);
-      else if (window.state.activeCourseId === "technical" && window.renderTraining_technical) window.renderTraining_technical(parts[1]);
-    }
+    else if (page === "training") window.renderTrainingPage(parts[1]);
     else if (page === "final") {
       if (window.state.activeCourseId === "basic" && window.renderFinal_basic) window.renderFinal_basic(parts[1]);
       else if (window.state.activeCourseId === "technical" && window.renderFinal_technical) window.renderFinal_technical(parts[1]);
@@ -169,11 +187,169 @@ window.route = function() {
     else if (page === "reports" && window.renderCourseReportsPage) window.renderCourseReportsPage();
     else if (page === "schedule" && window.renderSchedulePage) window.renderSchedulePage();
     else if (page === "achievements") window.renderAchievementsPage();
+    else if (page === "constructor") window.renderConstructorPage();
     else renderHome();
   } catch (err) {
     app.innerHTML = '<div class="module" style="color:var(--err);">Ошибка: ' + window.escapeHtml(err.message) + '</div>';
   }
   window.scrollTo(0, 0);
+};
+
+/* ============================================================
+   НОВОЕ: КОНСТРУКТОР ТЕСТОВ И КАРТОЧЕК (Только для учителя)
+   ============================================================ */
+window.renderConstructorPage = function() {
+    var app = window.$("app"); if (!app) return; app.innerHTML = "";
+    if (!window.state.staff) { app.innerHTML = '<div class="module" style="color:var(--err);">Доступ запрещен.</div>'; return; }
+    
+    app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
+    app.appendChild(el('<section class="hero"><h1>🛠 Конструктор</h1><p>Создавайте собственные тесты и карточки</p></section>'));
+
+    var data = window.getCustomData();
+
+    // ВКЛАДКА: КАРТОЧКИ
+    var cardHtml = `
+        <div class="module" style="border-left:4px solid var(--accent);">
+            <h3 style="margin-top:0;">🃏 Добавить карточку</h3>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;">
+                <input type="text" id="cf_front" class="self-input" placeholder="Слово на английском" style="flex:1; min-width:200px;">
+                <input type="text" id="cf_back" class="self-input" placeholder="Перевод на русский" style="flex:1; min-width:200px;">
+                <input type="text" id="cf_trans" class="self-input" placeholder="Транскрипция (необязательно)" style="flex:1; min-width:150px;">
+            </div>
+            <button class="btn" onclick="window.addCustomFlashcard()" style="background:var(--accent);">Добавить карточку</button>
+            
+            <h4 style="margin-top:30px;">Мои карточки (${data.flashcards.length})</h4>
+            <div style="max-height:200px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:10px;">
+                ${data.flashcards.map((c, i) => `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding:5px 0;">
+                    <span><b>${window.escapeHtml(c.front)}</b> — ${window.escapeHtml(c.back)}</span>
+                    <button onclick="window.deleteCustomFlashcard(${i})" style="background:none; border:none; color:var(--err); cursor:pointer;">🗑</button>
+                </div>`).join("") || "Пока нет карточек"}
+            </div>
+        </div>
+    `;
+    app.appendChild(el(cardHtml));
+
+    // ВКЛАДКА: ТЕСТЫ
+    var testHtml = `
+        <div class="module" style="border-left:4px solid var(--gold); margin-top:24px;">
+            <h3 style="margin-top:0;">📝 Создать тест</h3>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="text" id="test_title" class="self-input" placeholder="Название теста" style="flex:2;">
+                <input type="number" id="test_time" class="self-input" placeholder="Время (мин)" value="10" style="flex:1;">
+            </div>
+            <div id="testQuestionsList"></div>
+            <button class="btn ghost" onclick="window.addTestQuestionUI()" style="width:100%; margin-bottom:15px;">➕ Добавить вопрос</button>
+            <button class="btn" onclick="window.saveCustomTest()" style="width:100%; background:var(--gold); color:#000;">💾 Сохранить тест</button>
+
+            <h4 style="margin-top:30px;">Мои тесты (${data.tests.length})</h4>
+            <div style="border:1px solid var(--border); border-radius:8px; padding:10px;">
+                ${data.tests.map((t, i) => `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding:5px 0;">
+                    <span><b>${window.escapeHtml(t.title)}</b> (${t.questions.length} вопр.)</span>
+                    <button onclick="window.deleteCustomTest(${i})" style="background:none; border:none; color:var(--err); cursor:pointer;">🗑</button>
+                </div>`).join("") || "Пока нет тестов"}
+            </div>
+        </div>
+    `;
+    app.appendChild(el(testHtml));
+    
+    // Инициализируем один пустой вопрос
+    window.addTestQuestionUI();
+};
+
+window.addCustomFlashcard = function() {
+    var front = document.getElementById("cf_front").value.trim();
+    var back = document.getElementById("cf_back").value.trim();
+    var trans = document.getElementById("cf_trans").value.trim();
+    if (!front || !back) return window.showToast("Заполните слово и перевод", "err");
+    
+    var data = window.getCustomData();
+    data.flashcards.push({ front: front, back: back, transcription: trans });
+    window.saveCustomData(data);
+    window.showToast("Карточка добавлена!", "ok");
+    window.renderConstructorPage();
+};
+
+window.deleteCustomFlashcard = function(index) {
+    var data = window.getCustomData();
+    data.flashcards.splice(index, 1);
+    window.saveCustomData(data);
+    window.renderConstructorPage();
+};
+
+window.addTestQuestionUI = function() {
+    var list = document.getElementById("testQuestionsList");
+    var qId = Date.now() + Math.random().toString(36).substr(2, 5);
+    
+    var html = `
+        <div class="module" id="q_block_${qId}" style="background:var(--card-soft); padding:15px; margin-bottom:10px; border:1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <b style="color:var(--accent);">Вопрос</b>
+                <button onclick="document.getElementById('q_block_${qId}').remove()" style="background:none; border:none; color:var(--err); cursor:pointer;">Удалить</button>
+            </div>
+            <input type="text" class="self-input q-text" placeholder="Текст вопроса">
+            <div class="q-options" style="display:flex; flex-direction:column; gap:5px;">
+                <div style="display:flex; gap:5px;">
+                    <input type="text" class="self-input q-opt" placeholder="Вариант 1">
+                    <input type="radio" name="correct_${qId}" value="0" checked title="Правильный">
+                </div>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" class="self-input q-opt" placeholder="Вариант 2">
+                    <input type="radio" name="correct_${qId}" value="1" title="Правильный">
+                </div>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" class="self-input q-opt" placeholder="Вариант 3">
+                    <input type="radio" name="correct_${qId}" value="2" title="Правильный">
+                </div>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" class="self-input q-opt" placeholder="Вариант 4 (необязательно)">
+                    <input type="radio" name="correct_${qId}" value="3" title="Правильный">
+                </div>
+            </div>
+            <input type="hidden" class="q-group-id" value="${qId}">
+        </div>
+    `;
+    list.insertAdjacentHTML('beforeend', html);
+};
+
+window.saveCustomTest = function() {
+    var title = document.getElementById("test_title").value.trim();
+    var time = parseInt(document.getElementById("test_time").value) || 10;
+    if (!title) return window.showToast("Введите название теста", "err");
+
+    var questions = [];
+    document.querySelectorAll("#testQuestionsList > .module").forEach(block => {
+        var qText = block.querySelector(".q-text").value.trim();
+        var opts = [];
+        var optInputs = block.querySelectorAll(".q-opt");
+        optInputs.forEach(inp => { if (inp.value.trim()) opts.push(inp.value.trim()); });
+        
+        var correctRadio = block.querySelector("input[type='radio']:checked");
+        var correct = correctRadio ? parseInt(correctRadio.value) : 0;
+        
+        if (qText && opts.length >= 2 && correct < opts.length) {
+            questions.push({ q: qText, options: opts, correct: correct });
+        }
+    });
+
+    if (questions.length === 0) return window.showToast("Добавьте хотя бы один корректный вопрос", "err");
+
+    var data = window.getCustomData();
+    data.tests.push({
+        id: "custom_" + Date.now(),
+        title: title,
+        time: time,
+        questions: questions
+    });
+    window.saveCustomData(data);
+    window.showToast("Тест сохранен!", "ok");
+    window.renderConstructorPage();
+};
+
+window.deleteCustomTest = function(index) {
+    var data = window.getCustomData();
+    data.tests.splice(index, 1);
+    window.saveCustomData(data);
+    window.renderConstructorPage();
 };
 
 /* ============================================================
@@ -237,7 +413,6 @@ window.renderVideoPage = function(lessonId) {
         var wordOptions = `<option value="">— Выберите слово —</option>` + lesson.options.map(w => `<option value="${w}">${w}</option>`).join("");
         var formattedText = lesson.text.replace(/\{(\d+)\}/g, (m, num) => `<select class="gap-select" data-num="${num}" style="padding:4px 8px; border-radius:6px; border:1px solid var(--accent); background:var(--bg); color:var(--text); font-weight:bold; margin:0 4px;">${wordOptions}</select>`);
 
-        // Проверяем локальный файл или ссылка
         var isLocalVideo = lesson.videoUrl.endsWith('.mp4') || lesson.videoUrl.endsWith('.webm');
         var mediaHtml = isLocalVideo 
             ? `<div style="width:100%; border-radius:12px; overflow:hidden; margin-bottom:20px; background:#000; text-align:center;"><video controls style="width:100%; max-height:70vh; display:block;" src="${lesson.videoUrl}"></video></div>`
@@ -341,6 +516,78 @@ window.checkGapFill = function(lessonId) {
 };
 
 /* ============================================================
+   ТРЕНИРОВКА (Объединяем стандартные и кастомные тесты)
+   ============================================================ */
+window.renderTrainingPage = function(mdkId) {
+    var app = window.$("app"); if (!app) return; app.innerHTML = "";
+    app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
+
+    if (!mdkId) {
+        app.innerHTML += '<section class="hero"><h1>🎯 Тренировка</h1><p>Выберите тест для прохождения</p></section>';
+        
+        // Стандартные тесты курса
+        var questions = [];
+        if (window.MDK_DATA && window.MDK_DATA[window.state.activeCourseId]) {
+            window.MDK_DATA[window.state.activeCourseId].sections.forEach(s => s.topics.forEach(t => {
+                if (t.test) questions = questions.concat(t.test);
+            }));
+        }
+
+        // Кастомные тесты
+        var customData = window.getCustomData();
+        
+        var grid = el('<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px;"></div>');
+        
+        if (questions.length > 0) {
+            grid.appendChild(el(`<div class="module" style="cursor:pointer; border-left:4px solid var(--accent);" onclick="location.hash='#/training/standard'">
+                <h3 style="margin-top:0;">Стандартный тест</h3>
+                <p style="color:var(--muted); font-size:14px;">${questions.length} вопросов из курса</p>
+            </div>`));
+        }
+
+        customData.tests.forEach(t => {
+            grid.appendChild(el(`<div class="module" style="cursor:pointer; border-left:4px solid var(--gold);" onclick="window.startCustomTest('${t.id}')">
+                <h3 style="margin-top:0;">${window.escapeHtml(t.title)}</h3>
+                <p style="color:var(--muted); font-size:14px;">${t.questions.length} вопросов · ${t.time} мин</p>
+            </div>`));
+        });
+
+        if (grid.children.length === 0) {
+            app.innerHTML += '<div class="module">Тесты еще не добавлены.</div>';
+        } else {
+            app.appendChild(grid);
+        }
+        return;
+    }
+
+    if (mdkId === "standard") {
+        var questions = [];
+        window.MDK_DATA[window.state.activeCourseId].sections.forEach(s => s.topics.forEach(t => {
+            if (t.test) questions = questions.concat(t.test);
+        }));
+        questions = questions.sort(() => Math.random() - 0.5);
+        
+        app.innerHTML += `<section class="hero"><h1>Стандартный тест</h1><p>Вопросов: ${questions.length}</p></section>`;
+        var box = el('<div class="module"></div>');
+        box.innerHTML = window.buildTestBlock("train", "standard", questions);
+        app.appendChild(box);
+    }
+};
+
+window.startCustomTest = function(testId) {
+    var app = window.$("app"); if (!app) return; app.innerHTML = "";
+    var customData = window.getCustomData();
+    var test = customData.tests.find(t => t.id === testId);
+    if (!test) { app.innerHTML = "<div class='module'>Тест не найден.</div>"; return; }
+
+    app.appendChild(el('<a class="backlink" href="#/training" style="color:var(--accent);">← К списку тестов</a>'));
+    app.innerHTML += `<section class="hero"><h1>${window.escapeHtml(test.title)}</h1><p>Вопросов: ${test.questions.length}</p></section>`;
+    var box = el('<div class="module"></div>');
+    box.innerHTML = window.buildTestBlock("custom", test.id, test.questions);
+    app.appendChild(box);
+};
+
+/* ============================================================
    СЕРТИФИКАТ
    ============================================================ */
 window.renderCertificatePage = function() {
@@ -374,6 +621,7 @@ window.renderCertificatePage = function() {
         else if (key.includes("prac_")) { type = "Практика"; }
         else if (key.includes("self_")) { type = "Самостоятельная"; }
         else if (key.includes("writing_")) { type = "Письменная"; }
+        else if (key.includes("custom_")) { type = "Пользовательский тест"; }
 
         if (window.COURSE && window.COURSE.sections && type === "Задание") {
             window.COURSE.sections.forEach(s => s.topics.forEach(t => { if (t.id === topicName) topicName = t.code + " " + t.title; }));
