@@ -153,8 +153,6 @@ window.route = function() {
     else if (page === "profile" && window.renderProfilePage) window.renderProfilePage();
     else if (page === "videos") window.renderVideoPage(parts[1]);
     else if (page === "passports") window.renderSimplePage("Учебные материалы", window.GLOBAL_DATA?.passports, "📄");
-    else if (page === "safety") window.renderSimplePage("Охрана труда", window.GLOBAL_DATA?.safety, "🦺");
-    else if (page === "links" && window.renderLinksPage) window.renderLinksPage();
     else if (page === "training") {
       if (window.state.activeCourseId === "basic" && window.renderTraining_basic) window.renderTraining_basic(parts[1]);
       else if (window.state.activeCourseId === "technical" && window.renderTraining_technical) window.renderTraining_technical(parts[1]);
@@ -163,10 +161,8 @@ window.route = function() {
       if (window.state.activeCourseId === "basic" && window.renderFinal_basic) window.renderFinal_basic(parts[1]);
       else if (window.state.activeCourseId === "technical" && window.renderFinal_technical) window.renderFinal_technical(parts[1]);
     }
-    /* === НОВЫЕ РОУТЫ === */
     else if (page === "semester" && window.renderSemesterTests) window.renderSemesterTests(parts[1]);
     else if (page === "final-exam" && window.renderFinalExam) window.renderFinalExam(parts[1], parts[2]);
-    /* === /НОВЫЕ РОУТЫ === */
     else if (page === "arcade" && window.renderArcadePage) window.renderArcadePage();
     else if (page === "shop" && window.renderShopPage) window.renderShopPage();
     else if (page === "rating" && window.renderRatingPage) window.renderRatingPage();
@@ -181,7 +177,36 @@ window.route = function() {
 };
 
 /* ============================================================
-   ВИДЕО-УРОКИ
+   ОБЪЯВЛЕНИЯ (Главная страница)
+   ============================================================ */
+window.saveAnnouncement = function() {
+    var text = document.getElementById("annTextArea").value.trim();
+    localStorage.setItem("mdk.announcement", text);
+    window.showToast("Объявление сохранено!", "ok");
+    renderHome();
+};
+
+function renderAnnouncementBlock() {
+    var text = localStorage.getItem("mdk.announcement") || "";
+    var isTeacher = !!window.state.staff;
+    
+    if (!text && !isTeacher) return "";
+
+    var html = `<div class="module" style="border-left:4px solid var(--gold); background:rgba(255, 215, 0, 0.05); margin-bottom:24px;">
+        <h3 style="margin-top:0; color:var(--gold); display:flex; align-items:center; gap:10px;">📢 Объявление</h3>`;
+    
+    if (isTeacher) {
+        html += `<textarea id="annTextArea" class="self-input" style="min-height:80px; margin-bottom:10px;" placeholder="Напишите объявление для учеников...">${window.escapeHtml(text)}</textarea>
+                 <button class="btn" onclick="window.saveAnnouncement()" style="background:var(--gold); color:#000;">Сохранить</button>`;
+    } else {
+        html += `<p style="white-space:pre-wrap; font-size:16px; margin:0;">${window.escapeHtml(text)}</p>`;
+    }
+    
+    return html + `</div>`;
+}
+
+/* ============================================================
+   ВИДЕО-УРОКИ И ПОШАГОВЫЙ КВИЗ
    ============================================================ */
 window.renderVideoPage = function(lessonId) {
     var app = window.$("app"); if (!app) return; app.innerHTML = "";
@@ -214,7 +239,7 @@ window.renderVideoPage = function(lessonId) {
 
         box.innerHTML = `
             <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:12px; margin-bottom:20px; background:#000;">
-                <iframe src="${lesson.videoUrl}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;" allowfullscreen></iframe>
+                <iframe src="${lesson.videoUrl}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
             </div>
             <h3 style="color:var(--accent);">Complete the text:</h3>
             <div style="line-height:2; font-size:16px; background:var(--card-soft); padding:20px; border-radius:12px; border:1px solid var(--border);">
@@ -225,23 +250,72 @@ window.renderVideoPage = function(lessonId) {
         `;
     } else if (lesson.type === "quiz") {
         var isTeacher = !!window.state.staff;
-        var quizHtml = `<div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
-            <a href="${lesson.presentationUrl}" download class="btn" style="background:var(--gold); color:#000;">📥 Скачать презентацию (для учителя)</a>
-            ${isTeacher ? '<span style="align-self:center; color:var(--muted);">Покажите презентацию классу перед началом теста.</span>' : ''}
-        </div>
-        <h3 style="color:var(--accent);">🧠 Quiz: ${lesson.title}</h3>`;
-
-        lesson.questions.forEach((q, qi) => {
-            quizHtml += `<div class="q-block" style="margin-bottom:20px; padding:15px; background:var(--card-soft); border-radius:8px; border:1px solid var(--border);">
-                <div style="font-weight:bold; margin-bottom:10px;">${qi + 1}. ${q.q}</div>`;
-            q.options.forEach((opt, oi) => {
-                quizHtml += `<label style="display:block; padding:8px; cursor:pointer;"><input type="radio" name="brit_q${qi}" value="${oi}" style="margin-right:10px;">${opt}</label>`;
+        
+        box.innerHTML = `
+            <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; align-items:center;">
+                <h3 style="color:var(--accent); margin:0;">🧠 Quiz: ${lesson.title}</h3>
+                <span style="margin-left:auto; font-size:14px; color:var(--muted);" id="quizProgress">Вопрос 1 из ${lesson.questions.length}</span>
+                ${isTeacher ? `<a href="${lesson.presentationUrl}" download class="btn" style="background:var(--gold); color:#000; padding:6px 12px; font-size:12px;">📥 Скачать (Учителю)</a>` : ''}
+            </div>
+            <div id="quizContainer" style="background:var(--card-soft); padding:20px; border-radius:12px; border:1px solid var(--border);"></div>
+        `;
+        
+        // Инициализация пошагового квиза
+        var currentQ = 0;
+        var score = 0;
+        
+        function renderQuestion() {
+            if (currentQ >= lesson.questions.length) {
+                document.getElementById("quizContainer").innerHTML = `
+                    <div style="text-align:center; padding:20px;">
+                        <h2 style="color:var(--ok);">Квиз завершен!</h2>
+                        <p style="font-size:18px;">Правильных ответов: <b>${score}</b> из <b>${lesson.questions.length}</b></p>
+                        <button class="btn" onclick="location.hash='#/videos'">Вернуться к видео</button>
+                    </div>
+                `;
+                document.getElementById("quizProgress").textContent = "Завершено";
+                if (window.addXP && score > 0) window.addXP(score * 5);
+                return;
+            }
+            
+            var q = lesson.questions[currentQ];
+            document.getElementById("quizProgress").textContent = `Вопрос ${currentQ + 1} из ${lesson.questions.length}`;
+            
+            var html = `<div style="font-weight:bold; font-size:18px; margin-bottom:15px;">${q.q}</div>
+                        <div id="quizOptions">`;
+            
+            q.options.forEach((opt, i) => {
+                html += `<button class="btn ghost" style="display:block; width:100%; text-align:left; margin-bottom:8px; padding:12px; font-size:16px;" onclick="window.selectQuizOption(${i}, ${q.correct}, '${window.escapeHtml(q.explanation).replace(/'/g, "\\'")}')">${opt}</button>`;
             });
-            quizHtml += `<div class="q-fb" id="qfb_${qi}" style="margin-top:10px; font-weight:bold; display:none; color:var(--ok);"></div></div>`;
-        });
-
-        quizHtml += `<button class="btn" style="width:100%; padding:15px;" onclick="window.checkQuiz()">Проверить тест</button>`;
-        box.innerHTML = quizHtml;
+            
+            html += `</div><div id="quizFeedback" style="margin-top:15px; font-weight:bold; display:none;"></div>`;
+            document.getElementById("quizContainer").innerHTML = html;
+        }
+        
+        window.selectQuizOption = function(selected, correct, explanation) {
+            var btns = document.querySelectorAll("#quizOptions button");
+            btns.forEach((b, i) => {
+                b.disabled = true;
+                if (i === correct) b.style.borderColor = "var(--ok)";
+                if (i === selected && selected !== correct) b.style.borderColor = "var(--err)";
+            });
+            
+            if (selected === correct) score++;
+            
+            var fb = document.getElementById("quizFeedback");
+            fb.style.display = "block";
+            fb.innerHTML = (selected === correct ? "✅ Верно! " : "❌ Неверно. ") + explanation;
+            fb.style.color = selected === correct ? "var(--ok)" : "var(--err)";
+            
+            var nextBtn = document.createElement("button");
+            nextBtn.className = "btn";
+            nextBtn.textContent = currentQ === lesson.questions.length - 1 ? "Завершить" : "Следующий вопрос →";
+            nextBtn.style = "margin-top:15px; width:100%; padding:12px;";
+            nextBtn.onclick = function() { currentQ++; renderQuestion(); };
+            document.getElementById("quizContainer").appendChild(nextBtn);
+        };
+        
+        renderQuestion(); // Запуск первого вопроса
     }
 };
 
@@ -263,23 +337,6 @@ window.checkGapFill = function(lessonId) {
     if (pct >= 70 && window.addXP) { window.addXP(50); window.showToast("Отлично! +50 XP", "ok"); }
 };
 
-window.checkQuiz = function() {
-    var lesson = window.GLOBAL_LESSONS.britain;
-    var correct = 0;
-    lesson.questions.forEach((q, qi) => {
-        var selected = document.querySelector(`input[name="brit_q${qi}"]:checked`);
-        var fb = document.getElementById(`qfb_${qi}`);
-        fb.style.display = "block";
-        if (selected && Number(selected.value) === q.correct) {
-            correct++; fb.textContent = "✅ Верно! " + q.explanation; fb.style.color = "var(--ok)";
-        } else {
-            fb.textContent = "❌ Неверно. " + q.explanation; fb.style.color = "var(--err)";
-        }
-    });
-    window.showToast(`Результат: ${correct} из ${lesson.questions.length}`, "info");
-    if (correct >= lesson.questions.length * 0.7 && window.addXP) window.addXP(60);
-};
-
 /* ============================================================
    СЕРТИФИКАТ
    ============================================================ */
@@ -295,8 +352,7 @@ window.renderCertificatePage = function() {
     for (var key in p) {
         var topicName = key.replace("prac_", "").replace("self_", "").replace("writing_", "").replace(/_\d+$/, "");
         var type = "Задание";
-
-        // Расширенное распознавание типов (включая семестровые и итоговые)
+        
         if (key.includes("__final__")) { type = "Экзамен"; topicName = "Итоговый экзамен"; }
         else if (key.includes("_sem")) {
             type = "Семестровая";
@@ -542,7 +598,7 @@ window.gradeTest = function(prefix, uniqueId, encodedQuestions) {
 };
 
 /* ============================================================
-   НОВОЕ: СЕМЕСТРОВЫЕ КОНТРОЛЬНЫЕ
+   СЕМЕСТРОВЫЕ И ИТОГОВЫЕ
    ============================================================ */
 window.renderSemesterTests = function(testId) {
   var app = window.$("app"); if (!app) return; app.innerHTML = "";
@@ -551,14 +607,9 @@ window.renderSemesterTests = function(testId) {
   var course = window.state.activeCourseId;
   var tests = (window.SEMESTER_TESTS && window.SEMESTER_TESTS[course]) || [];
 
-  /* --- Список всех 10 контрольных --- */
   if (!testId) {
-    app.innerHTML += `<section class="hero"><h1>📝 Семестровые контрольные</h1><p>${tests.length} работ для 5 лет обучения (2 семестра в год)</p></section>`;
-
-    if (!tests.length) {
-      app.innerHTML += '<div class="module">Для этого курса контрольные ещё не добавлены.</div>';
-      return;
-    }
+    app.innerHTML += `<section class="hero"><h1>📝 Семестровые контрольные</h1><p>${tests.length} работ для 5 лет обучения</p></section>`;
+    if (!tests.length) { app.innerHTML += '<div class="module">Контрольные ещё не добавлены.</div>'; return; }
 
     var byYear = {};
     tests.forEach(t => { if (!byYear[t.year]) byYear[t.year] = []; byYear[t.year].push(t); });
@@ -569,9 +620,7 @@ window.renderSemesterTests = function(testId) {
       byYear[year].forEach(t => {
         var completed = window.state.results && window.state.results[t.id];
         var grade = completed && completed.grade ? completed.grade : null;
-        var badge = grade
-          ? `<span style="background:${grade >= 4 ? 'var(--ok)' : grade >= 3 ? 'var(--gold)' : 'var(--err)'}; color:#000; padding:2px 8px; border-radius:4px; font-size:12px; margin-left:8px;">Оценка: ${grade}</span>`
-          : '';
+        var badge = grade ? `<span style="background:${grade >= 4 ? 'var(--ok)' : grade >= 3 ? 'var(--gold)' : 'var(--err)'}; color:#000; padding:2px 8px; border-radius:4px; font-size:12px; margin-left:8px;">Оценка: ${grade}</span>` : '';
         grid.appendChild(el(`<div class="module" style="cursor:pointer; margin:0; border-left:4px solid var(--accent);" onclick="location.hash='#/semester/${t.id}'">
           <h3 style="margin-top:0; font-size:18px;">${t.title} ${badge}</h3>
           <p style="color:var(--muted); font-size:13px; margin:0;">${t.subtitle} · ${t.time} мин · ${t.questions.length} вопросов</p>
@@ -582,21 +631,16 @@ window.renderSemesterTests = function(testId) {
     return;
   }
 
-  /* --- Детальный просмотр одной контрольной --- */
   var test = tests.find(t => t.id === testId);
   if (!test) { app.innerHTML += '<div class="module">Тест не найден.</div>'; return; }
 
   app.appendChild(el('<a class="backlink" href="#/semester" style="color:var(--accent);">← К списку контрольных</a>'));
-  app.innerHTML += `<section class="hero"><h1>${test.title}</h1><p>${test.subtitle} · ${test.time} мин · ${test.questions.length} вопросов</p></section>`;
-
+  app.innerHTML += `<section class="hero"><h1>${test.title}</h1><p>${test.subtitle} · ${test.time} мин</p></section>`;
   var box = el('<div class="module"></div>');
   box.innerHTML = window.buildTestBlock("sem", test.id, test.questions);
   app.appendChild(box);
 };
 
-/* ============================================================
-   НОВОЕ: ИТОГОВЫЕ ЭКЗАМЕНЫ (5 × 2 варианта)
-   ============================================================ */
 window.renderFinalExam = function(examId, variantNum) {
   var app = window.$("app"); if (!app) return; app.innerHTML = "";
   app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
@@ -604,14 +648,9 @@ window.renderFinalExam = function(examId, variantNum) {
   var course = window.state.activeCourseId;
   var exams = (window.FINAL_EXAMS && window.FINAL_EXAMS[course]) || [];
 
-  /* --- Список всех 5 экзаменов --- */
   if (!examId) {
     app.innerHTML += `<section class="hero"><h1>📋 Итоговые экзамены</h1><p>${exams.length} экзаменов · по 2 варианта</p></section>`;
-
-    if (!exams.length) {
-      app.innerHTML += '<div class="module">Для этого курса экзамены ещё не добавлены.</div>';
-      return;
-    }
+    if (!exams.length) { app.innerHTML += '<div class="module">Экзамены ещё не добавлены.</div>'; return; }
 
     exams.forEach(function(e) {
       var v1 = window.state.results && window.state.results[e.id + "_v1"];
@@ -620,7 +659,7 @@ window.renderFinalExam = function(examId, variantNum) {
       var v2Label = v2 && v2.grade ? `✅ Вариант 2 (Оценка: ${v2.grade})` : "Вариант 2";
       app.appendChild(el(`<div class="module" style="border-left:4px solid var(--gold);">
         <h3 style="margin-top:0;">${e.title}</h3>
-        <p style="color:var(--muted); font-size:14px; margin-bottom:12px;">${e.time} мин · 2 варианта по ${e.variants[0].questions.length} вопросов</p>
+        <p style="color:var(--muted); font-size:14px; margin-bottom:12px;">${e.time} мин · 2 варианта</p>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <a class="btn" href="#/final-exam/${e.id}/1" style="background:var(--gold); color:#000;">${v1Label}</a>
           <a class="btn ghost" href="#/final-exam/${e.id}/2">${v2Label}</a>
@@ -630,7 +669,6 @@ window.renderFinalExam = function(examId, variantNum) {
     return;
   }
 
-  /* --- Конкретный вариант --- */
   var exam = exams.find(e => e.id === examId);
   if (!exam) { app.innerHTML += '<div class="module">Экзамен не найден.</div>'; return; }
 
@@ -639,11 +677,9 @@ window.renderFinalExam = function(examId, variantNum) {
   if (!variant) { app.innerHTML += '<div class="module">Вариант не найден.</div>'; return; }
 
   app.appendChild(el('<a class="backlink" href="#/final-exam" style="color:var(--accent);">← К списку экзаменов</a>'));
-  app.innerHTML += `<section class="hero"><h1>${exam.title}</h1><p>Вариант ${vNum} · ${exam.time} мин · ${variant.questions.length} вопросов</p></section>`;
-
+  app.innerHTML += `<section class="hero"><h1>${exam.title}</h1><p>Вариант ${vNum} · ${exam.time} мин</p></section>`;
   var box = el('<div class="module"></div>');
-  var uniqueId = exam.id + "_v" + vNum;
-  box.innerHTML = window.buildTestBlock("final", uniqueId, variant.questions);
+  box.innerHTML = window.buildTestBlock("final", exam.id + "_v" + vNum, variant.questions);
   app.appendChild(box);
 };
 
@@ -655,9 +691,13 @@ function renderHome() {
   var c = window.COURSE;
   if (!c) { app.innerHTML = "<div class='module'>Ошибка загрузки.</div>"; return; }
 
-  var html = `<section class="hero"><h1>${c.title}</h1><p>${c.module || ""}</p></section>`;
+  // Блок объявления
+  var annHtml = renderAnnouncementBlock();
 
-  /* Быстрые ссылки на контрольные */
+  var html = `<section class="hero"><h1>${c.title}</h1><p>${c.module || ""}</p></section>`;
+  html += annHtml;
+
+  // Быстрые ссылки на контрольные
   if (window.SEMESTER_TESTS && window.FINAL_EXAMS) {
     var cId = window.state.activeCourseId;
     var semCount = (window.SEMESTER_TESTS[cId] || []).length;
