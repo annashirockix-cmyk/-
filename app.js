@@ -7,7 +7,6 @@ window.$ = (id) => document.getElementById(id);
 window.escapeHtml = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 window.el = (html) => { var div = document.createElement("div"); div.innerHTML = html.trim(); return div.firstChild; };
 
-// ИСПРАВЛЕНИЕ: Ключ теперь всегда в нижнем регистре и без лишних пробелов
 window.studentKey = (s) => {
     s = s || window.state.student;
     if (!s) return null;
@@ -116,7 +115,6 @@ window.doStudentLogin = function() {
   
   if (!rawName || !rawGroup) { window.showToast("Введите ФИО и группу!", "err"); return; }
   
-  // Делаем имя аккуратным: "иванов иван" -> "Иванов Иван"
   var formattedName = rawName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
   
   window.state.student = { name: formattedName, group: rawGroup.toUpperCase() }; 
@@ -237,7 +235,34 @@ window.route = function() {
 };
 
 /* ============================================================
-   НОВЫЕ СТРАНИЦЫ (Материалы, Достижения, Сертификаты)
+   ПРОСМОТР УЧЕБНИКОВ (Модальное окно)
+   ============================================================ */
+window.openTextbook = function(filename) {
+    var modalId = "textbookModal";
+    var existing = document.getElementById(modalId);
+    if (existing) existing.remove();
+
+    var modal = document.createElement("div");
+    modal.id = modalId;
+    modal.style = "position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.9); z-index:999999; display:flex; flex-direction:column; padding:10px;";
+    
+    modal.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; color:#fff;">
+            <h3 style="margin:0; font-size:18px;">📖 Просмотр: ${window.escapeHtml(filename)}</h3>
+            <div style="display:flex; gap:10px;">
+                <a href="${filename}" download class="btn" style="background:var(--gold); color:#000; padding:8px 15px;">⬇️ Скачать</a>
+                <button class="btn ghost" onclick="document.getElementById('${modalId}').remove()" style="padding:8px 15px; border-color:#fff; color:#fff;">✕ Закрыть</button>
+            </div>
+        </div>
+        <div style="flex:1; background:#fff; border-radius:8px; overflow:hidden;">
+            <iframe src="${filename}" style="width:100%; height:100%; border:none;"></iframe>
+        </div>
+    `;
+    document.body.appendChild(modal);
+};
+
+/* ============================================================
+   НОВЫЕ СТРАНИЦЫ
    ============================================================ */
 window.renderSimplePage = function(title, data, icon) {
     var app = window.$("app"); if (!app) return; app.innerHTML = "";
@@ -264,7 +289,6 @@ window.renderAchievementsPage = function() {
     app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
     app.innerHTML += `<section class="hero"><h1>🏆 Достижения</h1></section>`;
     
-    // Защита на случай, если shop.js не загрузился
     if (!window.ACHIEVEMENTS) { app.innerHTML += '<div class="module">Список достижений недоступен.</div>'; return; }
     
     var unlocked = window.state.unlockedAchievements || [];
@@ -740,13 +764,12 @@ window.startCustomTest = function(testId) {
 };
 
 /* ============================================================
-   СЕРТИФИКАТ (Студента ИЛИ Учителя)
+   СЕРТИФИКАТ
    ============================================================ */
 window.renderCertificatePage = function() {
     var app = window.$("app"); if (!app) return; app.innerHTML = "";
     app.appendChild(el('<a class="backlink no-print" href="#/" style="color:var(--accent);">← На главную</a>'));
 
-    // Если зашел преподаватель - показываем ему сертификат преподавателя
     if (window.state.staff) {
         app.innerHTML += `
             <div class="no-print" style="text-align:center; margin-bottom:20px;">
@@ -771,7 +794,6 @@ window.renderCertificatePage = function() {
         return;
     }
 
-    // Если зашел студент
     if (!window.state.student) return;
 
     var p = window.state.results || {};
@@ -1148,7 +1170,7 @@ window.renderFinalExam = function(examId, variantNum) {
 };
 
 /* ============================================================
-   ГЛАВНАЯ
+   ГЛАВНАЯ (С блоком учебников)
    ============================================================ */
 function renderHome() {
   var app = window.$("app"); app.innerHTML = "";
@@ -1159,6 +1181,33 @@ function renderHome() {
 
   var html = `<section class="hero"><h1>${c.title}</h1><p>${c.module || ""}</p></section>`;
   html += annHtml;
+
+  // ============================================================
+  // БЛОК УЧЕБНИКОВ (ПЕРЕД ТЕМАМИ)
+  // ============================================================
+  html += `
+  <div class="module" style="border-left:4px solid #00bcd4; margin-bottom:24px; background: var(--card);">
+      <h3 style="margin-top:0; color:#00bcd4; display:flex; align-items:center; gap:10px;">📚 Учебники и пособия</h3>
+      <p style="color:var(--muted); font-size:14px; margin-bottom:15px;">Нажмите на учебник, чтобы просмотреть его страницы и картинки прямо на сайте.</p>
+      
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px;">
+          <!-- Учебник Беловой -->
+          <div class="module" style="margin:0; padding:15px; border:1px solid var(--border); background:var(--card-soft);">
+              <h4 style="margin:0 0 10px 0; color:var(--text);">🇷🇺 English (Белова)</h4>
+              <p style="font-size:12px; color:var(--muted); margin-bottom:15px;">Базовый английский для СПО. Грамматика, тексты, упражнения.</p>
+              <button class="btn" onclick="window.openTextbook('nchti_Belova-ENGLISH-dlya-SPO-2.pdf')" style="width:100%; background:#00bcd4; color:#000;">📖 Открыть учебник</button>
+          </div>
+
+          <!-- Учебник Flash on English -->
+          <div class="module" style="margin:0; padding:15px; border:1px solid var(--border); background:var(--card-soft);">
+              <h4 style="margin:0 0 10px 0; color:var(--text);">⚙️ Flash on English (Mechanics)</h4>
+              <p style="font-size:12px; color:var(--muted); margin-bottom:15px;">Технический английский. Механика, электроника, ЧПУ.</p>
+              <button class="btn" onclick="window.openTextbook('Flash_on_English_for_Mechanics_Electroni_5_-1.pdf')" style="width:100%; background:#00bcd4; color:#000;">📖 Открыть учебник</button>
+          </div>
+      </div>
+  </div>
+  `;
+  // ============================================================
 
   if (window.SEMESTER_TESTS && window.FINAL_EXAMS) {
     var cId = window.state.activeCourseId;
