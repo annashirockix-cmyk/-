@@ -123,7 +123,6 @@ window.doTeacherLogin = function() {
   var errEl = window.$("teacherLoginError");
   if (!u || !p) { errEl.textContent = "Введите логин и пароль"; errEl.style.display = "block"; return; }
   if ((u === "admin" && p === "admin") || (u === "teacher" && p === "teacher")) {
-      // Имя преподавателя обновлено
       window.state.staff = { name: u === "admin" ? "Администратор" : "Лазутина Ольга Валерьевна", role: u === "admin" ? "admin" : "teacher" };
       window.state.student = null; window.state.xp = 999999;
       try { localStorage.setItem("mdk.staff", JSON.stringify(window.state.staff)); localStorage.removeItem("mdk.student"); } catch(e){}
@@ -164,7 +163,6 @@ window.renderUserChip = function() {
   
   var avHtml = "👨‍🎓";
   if (window.state.avatar) {
-      // Если аватар - эмодзи (короткая строка)
       if (window.state.avatar.length <= 5 && !window.state.avatar.startsWith("http")) {
           avHtml = `<span style="font-size:24px;">${window.state.avatar}</span>`;
       } else {
@@ -721,11 +719,38 @@ window.startCustomTest = function(testId) {
 };
 
 /* ============================================================
-   СЕРТИФИКАТ (Личный)
+   СЕРТИФИКАТ (Студента ИЛИ Учителя)
    ============================================================ */
 window.renderCertificatePage = function() {
     var app = window.$("app"); if (!app) return; app.innerHTML = "";
     app.appendChild(el('<a class="backlink no-print" href="#/" style="color:var(--accent);">← На главную</a>'));
+
+    // Если зашел преподаватель - показываем ему сертификат преподавателя
+    if (window.state.staff) {
+        app.innerHTML += `
+            <div class="no-print" style="text-align:center; margin-bottom:20px;">
+                <a href="#/group-certificate" class="btn" style="background:var(--gold); color:#000; font-size:16px; padding:12px 20px;">👥 Перейти к сертификатам групп</a>
+            </div>
+            <div id="printable-cert" style="background:#fff; color:#000; padding:40px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5); max-width:800px; margin:0 auto 30px; text-align:center; border: 10px solid #c14a2a;">
+                <h1 style="font-size:36px; color:#c14a2a; text-transform:uppercase; margin-bottom:10px;">БЛАГОДАРСТВЕННОЕ ПИСЬМО</h1>
+                <p style="font-size:18px; margin-bottom:30px;">настоящим подтверждается, что</p>
+                <h2 style="font-size:32px; border-bottom:2px solid #ccc; display:inline-block; padding-bottom:5px; margin-bottom:30px;">${window.escapeHtml(window.state.staff.name)}</h2>
+                <p style="font-size:18px; margin-bottom:20px;">профессионально обучает студентов по программе</p>
+                <h3 style="font-size:24px; color:#c14a2a; margin-bottom:40px;">${window.escapeHtml(window.COURSE ? window.COURSE.title : "Английский язык")}</h3>
+                <p style="font-size:16px; font-style:italic; margin-bottom:40px;">За неоценимый вклад в развитие образования, терпение и высокий профессионализм.</p>
+                <div style="display:flex; justify-content:space-between; margin-top:50px; font-size:16px;">
+                    <div style="text-align:left;"><p>Дата выдачи:</p><p style="font-weight:bold;">${new Date().toLocaleDateString('ru-RU')}</p></div>
+                    <div style="text-align:right;"><p>Подпись:</p><div style="border-bottom: 1px solid #000; width: 200px; height: 30px;"></div></div>
+                </div>
+            </div>
+            <div style="text-align:center;" class="no-print">
+                <button class="btn" onclick="window.print()" style="padding:15px 30px; font-size:18px; background:var(--gold); color:#000;">🖨️ Распечатать сертификат</button>
+            </div>
+        `;
+        return;
+    }
+
+    // Если зашел студент
     if (!window.state.student) return;
 
     var p = window.state.results || {};
