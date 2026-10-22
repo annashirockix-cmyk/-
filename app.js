@@ -237,10 +237,14 @@ window.renderVideoPage = function(lessonId) {
         var wordOptions = `<option value="">— Выберите слово —</option>` + lesson.options.map(w => `<option value="${w}">${w}</option>`).join("");
         var formattedText = lesson.text.replace(/\{(\d+)\}/g, (m, num) => `<select class="gap-select" data-num="${num}" style="padding:4px 8px; border-radius:6px; border:1px solid var(--accent); background:var(--bg); color:var(--text); font-weight:bold; margin:0 4px;">${wordOptions}</select>`);
 
+        // Проверяем локальный файл или ссылка
+        var isLocalVideo = lesson.videoUrl.endsWith('.mp4') || lesson.videoUrl.endsWith('.webm');
+        var mediaHtml = isLocalVideo 
+            ? `<div style="width:100%; border-radius:12px; overflow:hidden; margin-bottom:20px; background:#000; text-align:center;"><video controls style="width:100%; max-height:70vh; display:block;" src="${lesson.videoUrl}"></video></div>`
+            : `<div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:12px; margin-bottom:20px; background:#000;"><iframe src="${lesson.videoUrl}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe></div>`;
+
         box.innerHTML = `
-            <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:12px; margin-bottom:20px; background:#000;">
-                <iframe src="${lesson.videoUrl}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
-            </div>
+            ${mediaHtml}
             <h3 style="color:var(--accent);">Complete the text:</h3>
             <div style="line-height:2; font-size:16px; background:var(--card-soft); padding:20px; border-radius:12px; border:1px solid var(--border);">
                 ${formattedText.split("\n").map(p => `<p style="margin-bottom:15px;">${p}</p>`).join("")}
@@ -260,7 +264,6 @@ window.renderVideoPage = function(lessonId) {
             <div id="quizContainer" style="background:var(--card-soft); padding:20px; border-radius:12px; border:1px solid var(--border);"></div>
         `;
         
-        // Инициализация пошагового квиза
         var currentQ = 0;
         var score = 0;
         
@@ -315,7 +318,7 @@ window.renderVideoPage = function(lessonId) {
             document.getElementById("quizContainer").appendChild(nextBtn);
         };
         
-        renderQuestion(); // Запуск первого вопроса
+        renderQuestion();
     }
 };
 
@@ -415,7 +418,7 @@ window.renderCertificatePage = function() {
 };
 
 /* ============================================================
-   ТЕМА (ЛЕКЦИИ / ПРАКТИКА / ПИСЬМО / ТЕСТ)
+   ТЕМА
    ============================================================ */
 window.renderTopic = function(topicId, activeTab) {
     var app = window.$("app"); if (!app) return; app.innerHTML = "";
