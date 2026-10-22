@@ -7,8 +7,8 @@ window.MDK_DATA = window.MDK_DATA || {};
   function prac(code, title, goal, task, variants) { return { code, title, goal, task, variants: variants || [] }; }
   function selfwork(code, title, task) { return { code, title, task }; }
   function tq(q, options, correct) { return { q, options, correct }; }
-  function topic(id, code, title, lectures, practicals, selfWork, test) {
-    return { id, code, title, lectures, practicals, selfWork, test };
+  function topic(id, code, title, lectures, practicals, selfWork, test, writing) {
+    return { id, code, title, lectures, practicals, selfWork, test, writing };
   }
 
   window.MDK_DATA["basic"] = {
@@ -79,6 +79,10 @@ window.MDK_DATA = window.MDK_DATA || {};
               tq("We ___ a new tool next week.", ["are going to design", "design", "designed", "have designed"], 0),
               tq("The workshop ___ at 8:00.", ["starts", "is starting", "started", "has started"], 0),
               tq("She ___ the report before the meeting started.", ["had finished", "finished", "has finished", "finishes"], 0)
+            ],
+            [
+              { code: "W 1.1", title: "My Daily Routine", task: "Write a short essay (100-150 words) about your daily routine. Use Present Simple for habits and Present Continuous for actions happening around you right now." },
+              { code: "W 1.2", title: "A Memorable Day", task: "Write about a memorable day in your life (120-150 words). Use Past Simple and Past Continuous to describe what happened and what you were doing." }
             ]
           ),
           topic("b-conditionals", "Topic 1.2", "Conditionals & Passive Voice",
@@ -135,6 +139,9 @@ window.MDK_DATA = window.MDK_DATA || {};
               tq("If they had checked the drawing, they ___ the mistake.", ["would have avoided", "avoided", "will avoid", "have avoided"], 0),
               tq("The machine ___ yesterday.", ["was repaired", "repaired", "has repaired", "repairs"], 0),
               tq("If you press the button, the machine ___.", ["will start", "starts", "started", "would start"], 0)
+            ],
+            [
+              { code: "W 1.3", title: "If I Were a Millionaire", task: "Write a short paragraph (100-120 words) about what you would do if you were a millionaire. Use the Second Conditional (If + Past Simple, would + V1)." }
             ]
           ),
           topic("b-modals", "Topic 1.3", "Modal Verbs & Articles",
@@ -181,6 +188,9 @@ window.MDK_DATA = window.MDK_DATA || {};
               tq("___ steel is a strong material.", ["—", "The", "A", "An"], 0),
               tq("He ___ operate the lathe.", ["can", "cans", "can to", "is can"], 0),
               tq("You ___ read the manual before starting.", ["should", "should to", "may to", "must to"], 0)
+            ],
+            [
+              { code: "W 1.4", title: "Advice for a Friend", task: "Your friend wants to learn how to drive a car. Write an email (100-120 words) giving them advice. Use modal verbs like 'should', 'must', and 'can'." }
             ]
           )
         ]
@@ -213,6 +223,9 @@ window.MDK_DATA = window.MDK_DATA || {};
               tq("'Rarely' means", ["not often", "always", "often", "never"], 0),
               tq("He ___ to bed at 11.", ["goes", "go", "going", "went"], 0),
               tq("I do my homework ___ day.", ["every", "each", "all", "any"], 0)
+            ],
+            [
+              { code: "W 2.1", title: "My Perfect Weekend", task: "Write a paragraph (80-100 words) describing your perfect weekend. What do you usually do? What are you doing this weekend?" }
             ]
           ),
           topic("b-travel", "Topic 2.2", "Travel & Transport",
@@ -239,6 +252,9 @@ window.MDK_DATA = window.MDK_DATA || {};
               tq("The train leaves from", ["platform", "gate", "counter", "office"], 0),
               tq("'Departure' means", ["leaving", "arriving", "waiting", "sleeping"], 0),
               tq("Customs is at the", ["airport", "school", "library", "home"], 0)
+            ],
+            [
+              { code: "W 2.2", title: "A Trip to Remember", task: "Write a story (120-150 words) about a trip you will never forget. Where did you go? Who was with you? What happened?" }
             ]
           ),
           topic("b-health", "Topic 2.3", "Health & Lifestyle",
@@ -265,6 +281,9 @@ window.MDK_DATA = window.MDK_DATA || {};
               tq("A toothache is pain in the", ["tooth", "head", "stomach", "back"], 0),
               tq("You shouldn't", ["eat junk food", "do sports", "drink water", "sleep well"], 0),
               tq("'Medicine' is used when you are", ["ill", "hungry", "bored", "tired"], 0)
+            ],
+            [
+              { code: "W 2.3", title: "Healthy Lifestyle Plan", task: "Write a short plan (100-120 words) on how to become healthier. Use the vocabulary from the lesson and modal verbs (should, must, need to)." }
             ]
           )
         ]
