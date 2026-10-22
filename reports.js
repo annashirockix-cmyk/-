@@ -11,122 +11,111 @@ window.renderCourseReportsPage = function() {
   var topPanel = el(`<div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; align-items:center;">
       <h2 style="margin:0; font-size:20px;">📊 Отчеты и управление</h2>
       <div style="margin-left:auto; display:flex; gap:10px;">
-          <select id="reportGroupFilter" class="self-input" style="width:auto; margin:0; padding:10px; font-weight:bold;">
-              <option value="all">Все группы</option>
-              <option value="ТЕСТ">ТЕСТ</option>
-              <option value="ТМ 4-3">ТМ 4-3</option>
-              <option value="ТМ 3-4">ТМ 3-4</option>
-          </select>
           <button class="btn" id="btnRefreshReports" style="padding:10px 20px;">🔄 Обновить</button>
+          <button class="btn" onclick="location.hash='#/group-certificate'" style="padding:10px 20px; background:var(--gold); color:#000;">🏆 Сертификаты групп</button>
       </div>
   </div>`);
   app.appendChild(topPanel);
   var contentWrap = el('<div id="reportsContent"></div>'); app.appendChild(contentWrap);
 
+  function renderStudentCard(s) {
+      var p = {}; try { p = JSON.parse(s.payload || "{}"); } catch(e) {}
+      var xp = p.xp || 0; var results = p.results || {};
+      var sKey = s.name.trim().toLowerCase() + "|" + s.group.trim().toLowerCase();
+
+      var block = document.createElement("div");
+      block.className = "module";
+      block.style = "margin-bottom:20px; border-left: 4px solid var(--accent); padding:15px;";
+
+      block.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+          <h3 style="margin:0;">${window.escapeHtml(s.name)} <span style="color:var(--muted); font-size:14px; font-weight:normal;">(Гр. ${window.escapeHtml(s.group)})</span></h3>
+          <span style="color:var(--gold); font-weight:bold;">${xp} XP</span>
+      </div>`;
+
+      var table = document.createElement("table");
+      table.style = "width:100%; border-collapse:collapse; font-size:14px; text-align:left;";
+      table.innerHTML = `<thead><tr style="background:var(--card-soft);">
+          <th style="padding:8px; border:1px solid var(--border);">Тема / Задание</th>
+          <th style="padding:8px; border:1px solid var(--border);">Тип работы</th>
+          <th style="padding:8px; border:1px solid var(--border); text-align:center;">Оценка / Статус</th>
+          <th style="padding:8px; border:1px solid var(--border); text-align:center;">Действие</th>
+      </tr></thead>`;
+      
+      var tbody = document.createElement("tbody");
+      var hasWorks = false;
+
+      for (var key in results) {
+          if (!results.hasOwnProperty(key)) continue;
+          hasWorks = true;
+          var item = results[key];
+          var topicName = key; var typeName = "Тест"; var gradeDisplay = item.grade || "—";
+
+          if (key.includes("prac_")) typeName = "Практика";
+          else if (key.includes("self_")) typeName = "Самостоятельная";
+          else if (key.includes("writing_")) typeName = "Письменная";
+          else if (key.includes("_sem")) typeName = "Семестровая";
+          else if (key.startsWith("final_")) typeName = "Итоговый экзамен";
+          else if (key === "__final__" + window.state.activeCourseId) { typeName = "Экзамен"; topicName = "Итоговый экзамен"; }
+
+          var actionBtn = "";
+          if (typeName === "Письменная") {
+              if (item.status === "pending") {
+                  gradeDisplay = `<span style="color:var(--gold);">На проверке</span>`;
+                  actionBtn = `<button class="btn" style="padding:4px 8px; font-size:12px; background:var(--gold); color:#000;" onclick="window.teacherGradeWriting('${sKey}', '${key}')">Оценить</button>`;
+              } else if (item.status === "graded") { gradeDisplay = `<span style="color:var(--ok); font-weight:bold;">${item.grade}</span>`; }
+          }
+
+          var tr = document.createElement("tr");
+          tr.innerHTML = `<td style="padding:8px; border:1px solid var(--border);">${window.escapeHtml(topicName)}</td>
+                          <td style="padding:8px; border:1px solid var(--border);">${typeName}</td>
+                          <td style="padding:8px; border:1px solid var(--border); text-align:center;">${gradeDisplay}</td>
+                          <td style="padding:8px; border:1px solid var(--border); text-align:center;">${actionBtn}</td>`;
+          tbody.appendChild(tr);
+      }
+
+      if (!hasWorks) tbody.innerHTML = `<tr><td colspan="4" style="padding:15px; text-align:center; color:var(--muted);">Нет выполненных заданий</td></tr>`;
+      table.appendChild(tbody);
+      block.appendChild(table);
+      
+      var controls = document.createElement("div");
+      controls.style = "margin-top:10px; display:flex; gap:10px; justify-content:flex-end;";
+      controls.innerHTML = `
+          <button class="btn" style="padding:4px 8px; font-size:12px; background:var(--gold); color:#000;" onclick="window.grantXP('${sKey}')">+ XP</button>
+          <button class="btn ghost" style="padding:4px 8px; font-size:12px; border-color:var(--err); color:var(--err);" onclick="window.deleteStudent('${sKey}', '${s.name}')">🗑 Удалить</button>
+      `;
+      block.appendChild(controls);
+      return block;
+  }
+
   function renderReports() {
-      var filterGroup = document.getElementById("reportGroupFilter").value;
       contentWrap.innerHTML = '<div class="skeleton" style="height:200px;"></div>';
       
       window.API.getStudents().then(d => {
           contentWrap.innerHTML = "";
           if (!d || !d.ok || !d.students || !d.students.length) { contentWrap.innerHTML = "<div class='module'>Нет студентов.</div>"; return; }
           
-          var students = filterGroup === "all" ? d.students : d.students.filter(s => s.group === filterGroup);
-          if (!students.length) { contentWrap.innerHTML = "<div class='module'>В группе нет студентов.</div>"; return; }
-
-          students.forEach((s) => {
-              var p = {}; try { p = JSON.parse(s.payload || "{}"); } catch(e) {}
-              var xp = p.xp || 0; var results = p.results || {};
-              var sKey = s.name.trim().toLowerCase() + "|" + s.group.trim().toLowerCase();
-
-              var block = document.createElement("div");
-              block.className = "module";
-              block.style = "margin-bottom:20px; border-left: 4px solid var(--accent); padding:15px;";
-
-              block.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--border); padding-bottom:10px;">
-                  <h3 style="margin:0;">${window.escapeHtml(s.name)} <span style="color:var(--muted); font-size:14px; font-weight:normal;">(Гр. ${window.escapeHtml(s.group)})</span></h3>
-                  <span style="color:var(--gold); font-weight:bold;">${xp} XP</span>
-              </div>`;
-
-              var table = document.createElement("table");
-              table.style = "width:100%; border-collapse:collapse; font-size:14px; text-align:left;";
-              table.innerHTML = `<thead><tr style="background:var(--card-soft);">
-                  <th style="padding:8px; border:1px solid var(--border);">Тема / Задание</th>
-                  <th style="padding:8px; border:1px solid var(--border);">Тип работы</th>
-                  <th style="padding:8px; border:1px solid var(--border); text-align:center;">Оценка / Статус</th>
-                  <th style="padding:8px; border:1px solid var(--border); text-align:center;">Действие</th>
-              </tr></thead>`;
-              
-              var tbody = document.createElement("tbody");
-              var hasWorks = false;
-
-              for (var key in results) {
-                  if (!results.hasOwnProperty(key)) continue;
-                  hasWorks = true;
-                  var item = results[key];
-                  var topicName = key; var typeName = "Неизвестно"; var gradeDisplay = item.grade || "—";
-
-                  if (key.includes("prac_")) typeName = "Практика";
-                  else if (key.includes("self_")) typeName = "Самостоятельная";
-                  else if (key.includes("writing_")) typeName = "Письменная";
-                  else if (key === "__final__" + window.state.activeCourseId) { typeName = "Экзамен"; topicName = "Итоговый экзамен"; }
-                  else typeName = "Тест";
-
-                  var cleanId = key.replace("prac_", "").replace("self_", "").replace("writing_", "").replace(/_\d+$/, "");
-                  if (window.COURSE && window.COURSE.sections) {
-                      window.COURSE.sections.forEach(sec => sec.topics.forEach(t => { if (t.id === cleanId) topicName = t.code + " " + t.title; }));
-                  }
-
-                  var actionBtn = "";
-                  if (typeName === "Письменная") {
-                      if (item.status === "pending") {
-                          gradeDisplay = `<span style="color:var(--gold);">На проверке</span>`;
-                          actionBtn = `<button class="btn" style="padding:4px 8px; font-size:12px; background:var(--gold); color:#000;" onclick="window.teacherGradeWriting('${sKey}', '${key}')">Оценить</button>`;
-                      } else if (item.status === "graded") { gradeDisplay = `<span style="color:var(--ok); font-weight:bold;">${item.grade}</span>`; }
-                  }
-
-                  var tr = document.createElement("tr");
-                  tr.innerHTML = `<td style="padding:8px; border:1px solid var(--border);">${window.escapeHtml(topicName)}</td>
-                                  <td style="padding:8px; border:1px solid var(--border);">${typeName}</td>
-                                  <td style="padding:8px; border:1px solid var(--border); text-align:center;">${gradeDisplay}</td>
-                                  <td style="padding:8px; border:1px solid var(--border); text-align:center;">${actionBtn}</td>`;
-                  tbody.appendChild(tr);
-
-                  // Если это письменная работа, выводим детали (текст и картинку)
-                  if (typeName === "Письменная" && (item.text || item.image)) {
-                      var detailTr = document.createElement("tr");
-                      var detailTd = document.createElement("td");
-                      detailTd.colSpan = 4;
-                      detailTd.style = "padding:10px; border:1px solid var(--border); background:var(--card-soft);";
-                      
-                      var content = "";
-                      if (item.text) content += `<div style="margin-bottom:10px;"><b>Текст:</b><br><p style="white-space:pre-wrap; font-style:italic; margin-top:5px;">${window.escapeHtml(item.text)}</p></div>`;
-                      if (item.image) content += `<div><b>Фото:</b><br><img src="${item.image}" style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid var(--border); margin-top:5px;"></div>`;
-                      
-                      detailTd.innerHTML = content;
-                      detailTr.appendChild(detailTd);
-                      tbody.appendChild(detailTr);
-                  }
-              }
-
-              if (!hasWorks) tbody.innerHTML = `<tr><td colspan="4" style="padding:15px; text-align:center; color:var(--muted);">Нет выполненных заданий</td></tr>`;
-
-              table.appendChild(tbody);
-              block.appendChild(table);
-              
-              var controls = document.createElement("div");
-              controls.style = "margin-top:10px; display:flex; gap:10px; justify-content:flex-end;";
-              controls.innerHTML = `
-                  <button class="btn" style="padding:4px 8px; font-size:12px; background:var(--gold); color:#000;" onclick="window.grantXP('${sKey}')">+ XP</button>
-                  <button class="btn ghost" style="padding:4px 8px; font-size:12px; border-color:var(--err); color:var(--err);" onclick="window.deleteStudent('${sKey}', '${s.name}')">🗑 Удалить</button>
-              `;
-              block.appendChild(controls);
-              contentWrap.appendChild(block);
-          });
-      }).catch(err => { contentWrap.innerHTML = `<div class="module" style="color:var(--err);">Ошибка: ${err.message}</div>`; });
+          d.students.forEach(s => { contentWrap.appendChild(renderStudentCard(s)); });
+      }).catch(err => {
+          contentWrap.innerHTML = `<div class="module" style="color:var(--gold); margin-bottom:20px; border-left:4px solid var(--gold);">
+              ⚠️ <b>Внимание:</b> Ошибка подключения к Google Таблицам (CORS).<br>
+              <small>Показаны данные, сохраненные локально на этом устройстве. Чтобы исправить, переопубликуйте скрипт в Google Apps Script (Доступ: Все).</small>
+          </div>`;
+          
+          // Резервный режим: показываем текущего студента из памяти браузера
+          var k = window.studentKey();
+          if (k && window.state.student) {
+              var localStudent = {
+                  name: window.state.student.name,
+                  group: window.state.student.group,
+                  payload: JSON.stringify({ xp: window.state.xp, results: window.state.results })
+              };
+              contentWrap.appendChild(renderStudentCard(localStudent));
+          } else {
+              contentWrap.innerHTML += "<div class='module'>Локальных данных нет.</div>";
+          }
+      });
   }
 
-  document.getElementById("reportGroupFilter").onchange = renderReports;
   document.getElementById("btnRefreshReports").onclick = renderReports;
   renderReports();
 };
