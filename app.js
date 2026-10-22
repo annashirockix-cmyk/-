@@ -6,7 +6,15 @@
 window.$ = (id) => document.getElementById(id);
 window.escapeHtml = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 window.el = (html) => { var div = document.createElement("div"); div.innerHTML = html.trim(); return div.firstChild; };
-window.studentKey = (s) => { s = s || window.state.student; return s ? (s.name.trim().toLowerCase() + "|" + s.group.trim().toLowerCase()) : null; };
+
+// ИСПРАВЛЕНИЕ: Ключ теперь всегда в нижнем регистре и без лишних пробелов
+window.studentKey = (s) => {
+    s = s || window.state.student;
+    if (!s) return null;
+    var cleanName = s.name.trim().replace(/\s+/g, ' ').toLowerCase();
+    var cleanGroup = s.group.trim().replace(/\s+/g, ' ').toLowerCase();
+    return cleanName + "|" + cleanGroup;
+};
 
 window.showToast = function(msg, type) {
   var container = document.querySelector(".toast-container");
@@ -103,10 +111,22 @@ window.loadStudentData = function() {
    АВТОРИЗАЦИЯ
    ============================================================ */
 window.doStudentLogin = function() {
-  var n = window.$("loginName").value.trim(); var g = window.$("loginGroup").value.trim();
-  if (!n || !g) { window.showToast("Введите ФИО и группу!", "err"); return; }
-  window.state.student = { name: n, group: g.toUpperCase() }; window.state.staff = null;
-  try { localStorage.setItem("mdk.student", JSON.stringify(window.state.student)); localStorage.removeItem("mdk.staff"); } catch(e){}
+  var rawName = window.$("loginName").value.trim().replace(/\s+/g, ' ');
+  var rawGroup = window.$("loginGroup").value.trim().replace(/\s+/g, ' ');
+  
+  if (!rawName || !rawGroup) { window.showToast("Введите ФИО и группу!", "err"); return; }
+  
+  // Делаем имя аккуратным: "иванов иван" -> "Иванов Иван"
+  var formattedName = rawName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  
+  window.state.student = { name: formattedName, group: rawGroup.toUpperCase() }; 
+  window.state.staff = null;
+  
+  try { 
+      localStorage.setItem("mdk.student", JSON.stringify(window.state.student)); 
+      localStorage.removeItem("mdk.staff"); 
+  } catch(e){}
+  
   window.renderUserChip(); window.loadStudentData(); window.route();
 };
 
@@ -244,6 +264,7 @@ window.renderAchievementsPage = function() {
     app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
     app.innerHTML += `<section class="hero"><h1>🏆 Достижения</h1></section>`;
     
+    // Защита на случай, если shop.js не загрузился
     if (!window.ACHIEVEMENTS) { app.innerHTML += '<div class="module">Список достижений недоступен.</div>'; return; }
     
     var unlocked = window.state.unlockedAchievements || [];
@@ -966,18 +987,16 @@ window.saveWritingWork = function(uniqueId) {
 };
 
 /* ============================================================
-   ТЕСТ-БЛОКИ (С добавленным таймером)
+   ТЕСТ-БЛОКИ
    ============================================================ */
 window.buildTestBlock = function(prefix, uniqueId, questions, timeLimit) {
     var safeQuestions = encodeURIComponent(JSON.stringify(questions));
     var html = `<div id="test_wrap_${prefix}_${uniqueId}">`;
     
-    // Если задано время, выводим таймер
     if (timeLimit && timeLimit > 0) {
         var timerId = "timer_" + prefix + "_" + uniqueId;
         html += `<div style="font-size:24px; font-weight:bold; color:var(--accent); text-align:right; margin-bottom:20px; background:var(--card-soft); padding:10px 15px; border-radius:8px;" id="${timerId}">⏱️ ${timeLimit}:00</div>`;
         
-        // Запуск таймера после вставки в DOM
         setTimeout(() => {
             var timeLeft = timeLimit * 60;
             var timerEl = document.getElementById(timerId);
@@ -992,7 +1011,6 @@ window.buildTestBlock = function(prefix, uniqueId, questions, timeLimit) {
                 if (timeLeft <= 0) {
                     clearInterval(tid);
                     timerEl.textContent = "⏰ Время вышло!";
-                    // Автоматическая сдача
                     var submitBtn = document.getElementById(`btn_submit_${prefix}_${uniqueId}`);
                     if (submitBtn && !submitBtn.disabled) submitBtn.click();
                 }
@@ -1017,7 +1035,7 @@ window.buildTestBlock = function(prefix, uniqueId, questions, timeLimit) {
 
 window.gradeTest = function(prefix, uniqueId, encodedQuestions) {
     var btn = document.getElementById(`btn_submit_${prefix}_${uniqueId}`);
-    if (btn) btn.disabled = true; // Блокируем кнопку, чтобы нельзя было сдать дважды
+    if (btn) btn.disabled = true;
 
     var questions = JSON.parse(decodeURIComponent(encodedQuestions));
     var correct = 0;
