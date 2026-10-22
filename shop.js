@@ -6,7 +6,10 @@ const ACHIEVEMENTS = [
     { id: "hacker", title: "Хакер", desc: "Пройти первый тест", icon: "💻", check: (s) => Object.keys(s.results).some(k => k.includes('_test')) },
     { id: "gamer", title: "Геймер", desc: "Сыграть в мини-игру", icon: "🎮", check: (s) => s.xp >= 50 },
     { id: "level_5", title: "Опытный", desc: "Достичь 5 уровня", icon: "⭐", check: (s) => window.getLevel(s.xp) >= 5 },
-    { id: "rich", title: "Богач", desc: "Накопить 1000 XP", icon: "💰", check: (s) => s.xp >= 1000 }
+    { id: "rich", title: "Богач", desc: "Накопить 1000 XP", icon: "💰", check: (s) => s.xp >= 1000 },
+    { id: "sherlock", title: "Шерлок", desc: "Пройти 5 семестровых", icon: "🕵️", check: (s) => Object.keys(s.results).filter(k => k.includes('_sem')).length >= 5 },
+    { id: "london_eye", title: "Лондонский глаз", desc: "Пройти все итоговые (5 лет)", icon: "🎡", check: (s) => Object.keys(s.results).filter(k => k.startsWith('final_')).length >= 10 },
+    { id: "perfect", title: "Идеально", desc: "Получить оценку 5", icon: "💯", check: (s) => Object.values(s.results).some(r => r.grade === 5) }
 ];
 
 const THEMES = [
@@ -14,7 +17,11 @@ const THEMES = [
     { id: "neon", title: "Киберпанк", price: 500, color: "#ff00cc", type: "theme" },
     { id: "matrix", title: "Матрица", price: 500, color: "#00ff00", type: "theme" },
     { id: "anime", title: "Аниме (Розовый)", price: 800, color: "#ffb6c1", type: "theme" },
-    { id: "rgb", title: "RGB Геймер", price: 1000, color: "#ff0055", type: "theme" }
+    { id: "rgb", title: "RGB Геймер", price: 1000, color: "#ff0055", type: "theme" },
+    { id: "union-jack", title: "Union Jack 🇬🇧", price: 1200, color: "#00247d", type: "theme" },
+    { id: "royal", title: "Royal Family 👑", price: 1500, color: "#4a148c", type: "theme" },
+    { id: "sherlock", title: "Sherlock 🕵️", price: 1300, color: "#3e2723", type: "theme" },
+    { id: "tea-time", title: "Tea Time ☕", price: 900, color: "#f8bbd0", type: "theme" }
 ];
 
 const AVATARS = [
@@ -22,13 +29,18 @@ const AVATARS = [
     { id: "av1", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix", price: 200, title: "Парень" },
     { id: "av2", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka", price: 200, title: "Девушка" },
     { id: "av3", url: "https://api.dicebear.com/7.x/bottts/svg?seed=Robo", price: 300, title: "Робот" },
-    { id: "custom", url: "url", price: 500, title: "Свой URL" }
+    { id: "custom", url: "url", price: 500, title: "Свой URL" },
+    { id: "sherlock_av", url: "https://api.dicebear.com/7.x/personas/svg?seed=Sherlock&hair=short02&accessories=glasses", price: 800, title: "Шерлок" },
+    { id: "queen_av", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Queen&top=crown&clothing=blazerAndShirt", price: 800, title: "Королева" },
+    { id: "guard_av", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Guard&hat=hat&clothing=overalls", price: 600, title: "Гвардеец" },
+    { id: "bus_av", url: "https://api.dicebear.com/7.x/bottts/svg?seed=Bus&baseColor=red", price: 400, title: "Красный автобус" }
 ];
 
 const EFFECTS = [
     { id: "none", title: "Нет", price: 0, css: "" },
     { id: "glow", title: "Свечение", price: 400, css: "box-shadow: 0 0 15px var(--accent); border-color: var(--accent);" },
-    { id: "rainbow", title: "Радуга", price: 800, css: "animation: rainbow-border 3s infinite linear; border: 3px solid; border-image: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet) 1;" }
+    { id: "rainbow", title: "Радуга", price: 800, css: "animation: rainbow-border 3s infinite linear; border: 3px solid; border-image: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet) 1;" },
+    { id: "union", title: "Британский флаг", price: 1000, css: "box-shadow: 0 0 0 3px #00247d, 0 0 0 6px #cf142b, 0 0 0 9px #ffffff; border: none;" }
 ];
 
 window.checkAchievements = function() {
@@ -66,8 +78,8 @@ window.renderShopPage = function() {
             else btnHtml = `<button class="btn" onclick="window.buyShopItem('${type}', '${item.id}', ${item.price}, '${item.url || ''}')" style="width:100%; background:var(--gold); color:#000;">Купить за ${item.price} XP</button>`;
 
             var preview = "";
-            if (type === 'theme') preview = `<div style="height:40px; border-radius:8px; background:${item.color}; margin-bottom:10px;"></div>`;
-            if (type === 'avatar' && item.url && item.url !== 'url') preview = `<img src="${item.url}" style="width:60px; height:60px; border-radius:50%; margin:0 auto 10px; display:block;">`;
+            if (type === 'theme') preview = `<div style="height:40px; border-radius:8px; background:${item.color}; margin-bottom:10px; border: 1px solid var(--border);"></div>`;
+            if (type === 'avatar' && item.url && item.url !== 'url') preview = `<img src="${item.url}" style="width:60px; height:60px; border-radius:50%; margin:0 auto 10px; display:block; background:var(--card-soft);">`;
             if (type === 'effect') preview = `<div style="height:40px; width:40px; border-radius:50%; background:var(--card); margin:0 auto 10px; ${item.css}"></div>`;
 
             html += `<div class="module" style="padding:15px; text-align:center;">
@@ -130,7 +142,6 @@ window.renderProfilePage = function() {
   var effCss = window.state.effect && window.state.effect !== 'none' ? EFFECTS.find(e => e.id === window.state.effect).css : "";
   var avHtml = window.state.avatar ? `<img src="${window.state.avatar}" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">` : "👨‍🎓";
 
-  // Блок с оценками
   var resultsHtml = "";
   var results = window.state.results || {};
   var hasResults = false;
@@ -140,13 +151,10 @@ window.renderProfilePage = function() {
           hasResults = true;
           var grade = results[key].grade || "?";
           var color = grade >= 4 ? "var(--ok)" : (grade >= 3 ? "var(--gold)" : "var(--err)");
-          
-          // Красивое название для ключа
           var displayName = key;
-          if (key.includes("_test")) {
-              var topicId = key.replace("_test", "");
-              displayName = "Тест / Практика (Тема " + topicId + ")";
-          }
+          if (key.includes("_test")) displayName = "Тест / Практика (Тема " + key.replace("_test", "") + ")";
+          if (key.includes("_sem")) displayName = "Семестровая";
+          if (key.startsWith("final_")) displayName = "Итоговый экзамен";
           
           resultsHtml += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid var(--border);">
               <span>${window.escapeHtml(displayName)}</span>
@@ -155,9 +163,7 @@ window.renderProfilePage = function() {
       }
   }
 
-  if (!hasResults) {
-      resultsHtml = "<p style='color:var(--muted);'>Вы пока не прошли ни одного теста.</p>";
-  }
+  if (!hasResults) resultsHtml = "<p style='color:var(--muted);'>Вы пока не прошли ни одного теста.</p>";
 
   app.innerHTML += `<section class="module" style="text-align:center; padding:40px;">
       <div style="width:120px; height:120px; margin:0 auto 20px; border-radius:50%; border:4px solid var(--accent); display:flex; align-items:center; justify-content:center; font-size:60px; ${effCss}">

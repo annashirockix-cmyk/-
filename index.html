@@ -91,10 +91,14 @@
     <a class="drawer-item" data-go="#/shop">🛒 Магазин</a>
     <a class="drawer-item" data-go="#/videos">🎬 Видео и Презентации</a>
     <a class="drawer-item" data-go="#/passports">📄 Материалы</a>
-    <a class="drawer-item" data-go="#/safety">🦺 Охрана труда</a>
-    <a class="drawer-item" data-go="#/links">📚 Полезные ссылки</a>
+    
+    <div style="margin:12px 20px 6px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px;">Контроль знаний</div>
     <a class="drawer-item" data-go="#/training">🎯 Тренировка</a>
-    <a class="drawer-item" data-go="#/final">📋 Итоговый экзамен</a>
+    <a class="drawer-item" data-go="#/final">📋 Итоговый экзамен (текущий)</a>
+    <a class="drawer-item" data-go="#/semester">📝 Семестровые контрольные</a>
+    <a class="drawer-item" data-go="#/final-exam">📋 Итоговые экзамены (5 лет)</a>
+    
+    <div style="margin:12px 20px 6px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px;">Дополнительно</div>
     <a class="drawer-item" data-go="#/arcade">🃏 Карточки и кроссворд</a>
     <a class="drawer-item" data-go="#/rating">🏅 Доска почета</a>
     <a class="drawer-item" data-go="#/reports">📊 Отчеты (для преподавателя)</a>
@@ -105,19 +109,24 @@
 
 <main id="app"></main>
 
+<!-- ============ ДАННЫЕ ============ -->
 <script src="data-global.js"></script>
 <script src="data-basic.js"></script>
 <script src="data-technical.js"></script>
+<script src="semester-tests.js"></script>
+
+<!-- ============ ЯДРО ============ -->
 <script src="api.js"></script>
-<script src="tests-extra.js"></script> 
+<script src="tests-extra.js"></script>
 <script src="app.js"></script>
+
+<!-- ============ МОДУЛИ ============ -->
 <script src="exam-basic.js"></script>
 <script src="exam-technical.js"></script>
 <script src="shop.js"></script>
 <script src="reports.js"></script>
 <script src="extra.js"></script>
 <script src="info.js"></script>
-<script src="links.js"></script>
 <script src="rating.js"></script>
 <script src="schedule.js"></script>
 <script src="flashcards.js"></script>
