@@ -1,29 +1,18 @@
 "use strict";
 
 window.GLOBAL_DATA = {
-  videos: [
-    { title: "Isaac Newton – The Force of Genius", description: "Watch a video and complete the gap-fill exercise.", file: "#/videos/newton" },
-    { title: "A Glimpse of Britain", description: "Watch a video and answer the quiz questions about the UK.", file: "#/videos/britain" },
-    { title: "Basic English Grammar", description: "Overview of English tenses and conditionals.", file: "video/grammar.mp4" },
-    { title: "Technical Vocabulary", description: "Learning machine tools and CNC terms.", file: "video/technical.mp4" }
-  ],
-  
+  videos: [],
   passports: [
     { title: "English Grammar Guide (PDF)", description: "Comprehensive guide to English tenses, conditionals, and modals.", file: "materials/grammar.pdf" },
     { title: "Technical Vocabulary Dictionary (PDF)", description: "Dictionary of engineering, lathe, and CNC terms.", file: "materials/vocabulary.pdf" },
     { title: "Irregular Verbs List", description: "Complete list of irregular verbs with translations.", file: "materials/irregular_verbs.pdf" }
-  ],
-  
-  safety: [
-    { title: "Classroom Safety Rules", description: "General rules for the English classroom and computer use.", file: "rules.pdf" },
-    { title: "Workshop Safety Rules", description: "Safety rules for the workshop (in English).", file: "workshop_rules.pdf" }
   ]
 };
 
 window.GLOBAL_LESSONS = {
   newton: {
     title: "Isaac Newton - The Force of Genius",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Замените на реальную ссылку
+    videoUrl: "https://www.youtube.com/embed/xXc2XvTMu_0", // Рабочая ссылка на видео о Ньютоне
     type: "gap-fill",
     text: `Isaac Newton, a(n) {1}, physicist and astronomer, was one of the scientific geniuses of his day and his work has had a lasting effect on the world we live in.
 He was born in England in 1643 and educated at Trinity College, Cambridge where he studied the scientific and philosophical writers that were revolutionizing the world of learning.
