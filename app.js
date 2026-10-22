@@ -278,6 +278,7 @@ window.renderTopic = function(topicId, activeTab) {
     var tabs = [];
     if (topic.lectures && topic.lectures.length) tabs.push({ id: 'lectures', label: '📖 Lectures' });
     if (topic.practicals && topic.practicals.length) tabs.push({ id: 'practicals', label: '🛠 Practice' });
+    if (topic.writing && topic.writing.length) tabs.push({ id: 'writing', label: '✍️ Writing' });
     if (topic.selfWork && topic.selfWork.length) tabs.push({ id: 'selfWork', label: '✍️ Self-Work' });
     if ((topic.test && topic.test.length) || (topic.tests && topic.tests.length)) tabs.push({ id: 'test', label: '📝 Test' });
     if (topic.presentations && topic.presentations.length) tabs.push({ id: 'presentations', label: '📊 Presentations' });
@@ -349,6 +350,38 @@ window.renderTopic = function(topicId, activeTab) {
             contentBox.innerHTML += html;
         });
     } 
+
+    // --- 2.1. ПИСЬМЕННЫЕ РАБОТЫ ---
+    else if (activeTab === 'writing' && topic.writing) {
+        var isTeacher = !!window.state.staff;
+
+        topic.writing.forEach((w, index) => {
+            var uniqueId = `writing_${topicId}_${index}`;
+            var saved = window.state.results[uniqueId] || {};
+            var studentText = saved.text || "";
+            var grade = saved.grade ? `<span style="color:var(--ok); font-weight:bold; margin-left:10px;">Grade: ${saved.grade}</span>` : "";
+            
+            var html = `<div style="margin-bottom:20px; padding:20px; background:var(--card-soft); border-radius:12px; border:1px solid var(--border);">
+                <h4 style="margin-top:0; color:var(--accent); font-size:18px;">${w.code} ${w.title} ${grade}</h4>
+                <p><b>Task:</b> ${w.task}</p>`;
+
+            if (isTeacher) {
+                html += `<div style="margin-top:15px; padding:15px; background:var(--bg); border-radius:8px; border:1px solid var(--border);">
+                    <b>Student's Submission:</b>
+                    <p style="white-space:pre-wrap; margin-top:10px; font-style:italic; color:var(--text-soft);">${studentText || '<span style="color:var(--muted);">Not submitted yet.</span>'}</p>
+                </div>`;
+            } else {
+                html += `<div style="margin-top:15px; padding-top:15px; border-top:1px dashed var(--border);">
+                    <label style="font-weight:bold; display:block; margin-bottom:8px;">Write your answer here:</label>
+                    <textarea id="wr_${uniqueId}" class="self-input" style="width:100%; min-height:150px; resize:vertical; line-height:1.5;" placeholder="Start writing...">${studentText}</textarea>
+                    <button class="btn" style="margin-top:10px; padding:10px 20px; width:100%; background:var(--accent); color:#fff;" onclick="window.saveWritingWork('${uniqueId}')">💾 Save Work</button>
+                </div>`;
+            }
+            
+            html += `</div>`;
+            contentBox.innerHTML += html;
+        });
+    }
     
     // --- 3. САМОСТОЯТЕЛЬНАЯ ---
     else if (activeTab === 'selfWork' && topic.selfWork) {
@@ -398,6 +431,26 @@ window.renderTopic = function(topicId, activeTab) {
             </div>`;
         });
     } 
+};
+
+// ================= СОХРАНЕНИЕ ПИСЬМЕННЫХ РАБОТ =================
+window.saveWritingWork = function(uniqueId) {
+    var textarea = document.getElementById("wr_" + uniqueId);
+    if (!textarea) return;
+    
+    var text = textarea.value.trim();
+    if (!text) return window.showToast("Please write something before saving.", "err");
+
+    if (!window.state.results[uniqueId]) window.state.results[uniqueId] = {};
+    window.state.results[uniqueId].text = text;
+    window.state.results[uniqueId].grade = window.state.results[uniqueId].grade || "Pending";
+    
+    if (window.addXP) window.addXP(15);
+    window.saveStudentData();
+    
+    window.showToast("Work saved successfully! Teacher will check it soon.", "ok");
+    // Автоматическое обновление страницы для отображения статуса
+    window.renderTopic(window.location.hash.split('/')[2], 'writing');
 };
 
 // ================= ФУНКЦИИ ПРОВЕРКИ =================
@@ -576,6 +629,7 @@ function renderHome() {
       var badges = []; 
       if (t.lectures) badges.push("📖"); 
       if (t.practicals) badges.push("🛠"); 
+      if (t.writing) badges.push("✍️");
       if (t.test || t.tests) badges.push("📝");
       
       html += `<div class="topic" onclick="location.hash='#/topic/${t.id}/lecture'">
