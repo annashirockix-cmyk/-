@@ -7,8 +7,8 @@ window.MDK_DATA = window.MDK_DATA || {};
   function prac(code, title, goal, task, variants) { return { code, title, goal, task, variants: variants || [] }; }
   function selfwork(code, title, task) { return { code, title, task }; }
   function tq(q, options, correct) { return { q, options, correct }; }
-  function topic(id, code, title, lectures, practicals, selfWork, test) {
-    return { id, code, title, lectures, practicals, selfWork, test };
+  function topic(id, code, title, lectures, practicals, selfWork, test, writing) {
+    return { id, code, title, lectures, practicals, selfWork, test, writing };
   }
 
   window.MDK_DATA["technical"] = {
@@ -60,6 +60,9 @@ window.MDK_DATA = window.MDK_DATA || {};
               tq("An alloy of iron and carbon is called", ["steel", "aluminium", "copper", "brass"], 0),
               tq("'Hardness' is the ability to", ["resist indentation", "bend without breaking", "conduct heat", "stretch"], 0),
               tq("Carbon fibre is", ["strong and light", "heavy and brittle", "soft and cheap", "transparent"], 0)
+            ],
+            [
+              { code: "W 1.1", title: "Material Selection Report", task: "Write a short report (120-150 words) choosing a material for a specific part (e.g., a bicycle frame or a car engine block). Justify your choice using at least 3 properties (strength, weight, cost, corrosion resistance)." }
             ]
           ),
           topic("t-tools", "Topic 1.2", "Machine Tools",
@@ -92,6 +95,9 @@ window.MDK_DATA = window.MDK_DATA || {};
               tq("A drill creates", ["holes", "threads", "flat surfaces", "grooves"], 0),
               tq("Grinding is used for", ["finishing", "roughing", "drilling", "turning"], 0),
               tq("The tailstock is part of a", ["lathe", "milling machine", "drill", "grinder"], 0)
+            ],
+            [
+              { code: "W 1.2", title: "Describe a Lathe", task: "Write a descriptive text (100-120 words) explaining what a lathe is, its main parts, and what operations it performs. Use the vocabulary from the lesson." }
             ]
           ),
           topic("t-measure", "Topic 1.3", "Measurements & Precision",
@@ -123,6 +129,9 @@ window.MDK_DATA = window.MDK_DATA || {};
               tq("A calliper is used for", ["outer/inner dimensions", "only depth", "only angles", "only threads"], 0),
               tq("A dial indicator measures", ["runout", "temperature", "hardness", "roughness"], 0),
               tq("'Tolerance' is the allowed", ["deviation", "increase", "decrease", "error"], 0)
+            ],
+            [
+              { code: "W 1.3", title: "Accuracy vs Precision", task: "Write a short explanation (80-100 words) of the difference between accuracy and precision. Give one example of a measurement that is precise but not accurate." }
             ]
           )
         ]
@@ -203,6 +212,9 @@ N80 M30
               tq("G21 means", ["metric units", "inch units", "work offset", "cutter comp"], 0),
               tq("G54 is", ["work coordinate system", "tool length comp", "spindle speed", "plane selection"], 0),
               tq("M08 is", ["coolant ON", "coolant OFF", "tool change", "spindle stop"], 0)
+            ],
+            [
+              { code: "W 2.1", title: "Explain G-code", task: "Write a short guide (100-120 words) for a beginner explaining what G-code is, and describe at least 4 common G-codes (e.g., G00, G01, G02, G90) and their purpose." }
             ]
           ),
           topic("t-process", "Topic 2.2", "Manufacturing Processes",
@@ -239,6 +251,9 @@ N80 M30
               tq("Inspection is done", ["after machining", "before design", "during CAD", "after shipping"], 0),
               tq("CAM is used to", ["prepare the CNC program", "make drawings only", "inspect parts", "ship products"], 0),
               tq("Milling is done on a", ["milling machine", "lathe", "drill press", "grinder"], 0)
+            ],
+            [
+              { code: "W 2.2", title: "Manufacturing a Flange", task: "Write a step-by-step description (120-150 words) of how to manufacture a simple flange. Start from the raw material and finish with the inspection. Use the terms from the lesson." }
             ]
           ),
           topic("t-safety", "Topic 2.3", "Safety in the Workshop",
@@ -281,6 +296,9 @@ N80 M30
               tq("PPE stands for", ["Personal Protective Equipment", "Public Protection Equipment", "Personal Practice Equipment", "Professional Protective Engineering"], 0),
               tq("In case of accident, press the", ["emergency stop", "start button", "reset button", "coolant button"], 0),
               tq("Loose clothing is dangerous near", ["rotating parts", "tools on the bench", "the floor", "the light"], 0)
+            ],
+            [
+              { code: "W 2.3", title: "Safety Rules for a Lathe", task: "Write down 5 safety rules for working on a lathe in English. Use modal verbs like 'must', 'must not', 'should', 'shouldn't'. Explain briefly why each rule is important." }
             ]
           )
         ]
