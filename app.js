@@ -19,7 +19,7 @@ window.showToast = function(msg, type) {
 };
 
 /* ============================================================
-   ДАННЫЕ КОНСТРУКТОРА (Преподаватель)
+   ДАННЫЕ КОНСТРУКТОРА
    ============================================================ */
 window.getCustomData = function() {
     try { return JSON.parse(localStorage.getItem("mdk.custom_data")) || { flashcards: [], tests: [] }; }
@@ -108,6 +108,14 @@ window.doStudentLogin = function() {
   window.renderUserChip(); window.loadStudentData(); window.route();
 };
 
+window.loginAsTestStudent = function() {
+  window.state.student = { name: "Тестовый Студент", group: "ТЕСТ" };
+  window.state.staff = null;
+  try { localStorage.setItem("mdk.student", JSON.stringify(window.state.student)); localStorage.removeItem("mdk.staff"); } catch(e){}
+  window.renderUserChip(); window.loadStudentData(); window.route();
+  window.showToast("Вы вошли как Тестовый Студент.", "ok");
+};
+
 window.doTeacherLogin = function() {
   var u = window.$("teacherUser").value.trim(); var p = window.$("teacherPass").value.trim();
   var errEl = window.$("teacherLoginError");
@@ -150,7 +158,17 @@ window.renderUserChip = function() {
   if (window.state.staff) { window.$("userChipName").textContent = window.state.staff.name; window.$("userChipGroup").textContent = "Преподаватель"; window.$("userChipAvatar").innerHTML = "👨‍🏫"; return; }
   if (!window.state.student) return;
   window.$("userChipName").textContent = window.state.student.name; window.$("userChipGroup").textContent = "Гр. " + window.state.student.group;
-  window.$("userChipAvatar").innerHTML = window.state.avatar ? `<img src="${window.state.avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : "👨‍🎓";
+  
+  var avHtml = "👨‍🎓";
+  if (window.state.avatar) {
+      // Если аватар - эмодзи
+      if (window.state.avatar.length <= 4 && !window.state.avatar.startsWith("http")) {
+          avHtml = `<span style="font-size:24px;">${window.state.avatar}</span>`;
+      } else {
+          avHtml = `<img src="${window.state.avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+      }
+  }
+  window.$("userChipAvatar").innerHTML = avHtml;
 };
 
 /* ============================================================
@@ -196,8 +214,62 @@ window.route = function() {
 };
 
 /* ============================================================
-   НОВОЕ: КОНСТРУКТОР ТЕСТОВ И КАРТОЧЕК (Только для учителя)
+   НОВЫЕ СТРАНИЦЫ (Материалы и Достижения)
    ============================================================ */
+window.renderSimplePage = function(title, data, icon) {
+    var app = window.$("app"); if (!app) return; app.innerHTML = "";
+    app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
+    app.innerHTML += `<section class="hero"><h1>${icon} ${title}</h1></section>`;
+    
+    var list = el('<div class="module"></div>');
+    if (!data || data.length === 0) {
+        list.innerHTML = '<p style="color:var(--muted);">Пока нет доступных материалов.</p>';
+    } else {
+        data.forEach(item => {
+            list.innerHTML += `<div style="margin-bottom:15px; padding:15px; background:var(--card-soft); border-radius:8px; border:1px solid var(--border);">
+                <h4 style="margin:0 0 5px 0; color:var(--accent);">${window.escapeHtml(item.title)}</h4>
+                <p style="margin:0 0 10px 0; font-size:14px; color:var(--text-soft);">${window.escapeHtml(item.description)}</p>
+                <a href="${item.file}" download class="btn ghost" style="padding:6px 12px; font-size:12px;">⬇️ Скачать</a>
+            </div>`;
+        });
+    }
+    app.appendChild(list);
+};
+
+window.renderAchievementsPage = function() {
+    var app = window.$("app"); if (!app) return; app.innerHTML = "";
+    app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
+    app.innerHTML += `<section class="hero"><h1>🏆 Достижения</h1></section>`;
+    
+    if (!window.ACHIEVEMENTS) { app.innerHTML += '<div class="module">Список достижений недоступен.</div>'; return; }
+    
+    var unlocked = window.state.unlockedAchievements || [];
+    var grid = el('<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px;"></div>');
+    
+    window.ACHIEVEMENTS.forEach(ach => {
+        var isUnlocked = unlocked.includes(ach.id);
+        var opacity = isUnlocked ? 1 : 0.4;
+        var filter = isUnlocked ? 'none' : 'grayscale(100%)';
+        
+        grid.appendChild(el(`<div class="module" style="text-align:center; opacity:${opacity}; padding:20px;">
+            <div style="font-size:50px; margin-bottom:10px; filter:${filter};">${ach.icon}</div>
+            <h4 style="margin:0 0 5px 0; color:var(--accent);">${ach.title}</h4>
+            <p style="font-size:12px; color:var(--muted); margin:0;">${ach.desc}</p>
+            ${isUnlocked ? '<div style="color:var(--ok); font-weight:bold; font-size:12px; margin-top:10px;">✅ Получено</div>' : ''}
+        </div>`));
+    });
+    app.appendChild(grid);
+};
+
+/* ============================================================
+   КОНСТРУКТОР ТЕСТОВ
+   ============================================================ */
+window.saveGlobalTime = function() {
+    var val = document.getElementById("global_test_time").value;
+    localStorage.setItem("mdk.global_time", val);
+    window.showToast("Глобальное время сохранено", "ok");
+};
+
 window.renderConstructorPage = function() {
     var app = window.$("app"); if (!app) return; app.innerHTML = "";
     if (!window.state.staff) { app.innerHTML = '<div class="module" style="color:var(--err);">Доступ запрещен.</div>'; return; }
@@ -206,8 +278,22 @@ window.renderConstructorPage = function() {
     app.appendChild(el('<section class="hero"><h1>🛠 Конструктор</h1><p>Создавайте собственные тесты и карточки</p></section>'));
 
     var data = window.getCustomData();
+    var globalTime = localStorage.getItem("mdk.global_time") || "10";
 
-    // ВКЛАДКА: КАРТОЧКИ
+    // ВРЕМЯ НА ТЕСТЫ
+    var timeHtml = `
+        <div class="module" style="border-left:4px solid var(--accent); margin-bottom:24px;">
+            <h3 style="margin-top:0;">⏱️ Глобальное время на тесты</h3>
+            <p style="color:var(--muted); font-size:14px; margin-bottom:10px;">Установите таймер для стандартных и семестровых тестов. (0 - без таймера)</p>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <input type="number" id="global_test_time" class="self-input" value="${globalTime}" style="width:100px;">
+                <button class="btn" onclick="window.saveGlobalTime()">Сохранить</button>
+            </div>
+        </div>
+    `;
+    app.appendChild(el(timeHtml));
+
+    // КАРТОЧКИ
     var cardHtml = `
         <div class="module" style="border-left:4px solid var(--accent);">
             <h3 style="margin-top:0;">🃏 Добавить карточку</h3>
@@ -229,7 +315,7 @@ window.renderConstructorPage = function() {
     `;
     app.appendChild(el(cardHtml));
 
-    // ВКЛАДКА: ТЕСТЫ
+    // ТЕСТЫ
     var testHtml = `
         <div class="module" style="border-left:4px solid var(--gold); margin-top:24px;">
             <h3 style="margin-top:0;">📝 Создать тест</h3>
@@ -252,7 +338,6 @@ window.renderConstructorPage = function() {
     `;
     app.appendChild(el(testHtml));
     
-    // Инициализируем один пустой вопрос
     window.addTestQuestionUI();
 };
 
@@ -353,7 +438,7 @@ window.deleteCustomTest = function(index) {
 };
 
 /* ============================================================
-   ОБЪЯВЛЕНИЯ (Главная страница)
+   ОБЪЯВЛЕНИЯ, ВИДЕО И ТРЕНИРОВКА
    ============================================================ */
 window.saveAnnouncement = function() {
     var text = document.getElementById("annTextArea").value.trim();
@@ -365,25 +450,19 @@ window.saveAnnouncement = function() {
 function renderAnnouncementBlock() {
     var text = localStorage.getItem("mdk.announcement") || "";
     var isTeacher = !!window.state.staff;
-    
     if (!text && !isTeacher) return "";
 
     var html = `<div class="module" style="border-left:4px solid var(--gold); background:rgba(255, 215, 0, 0.05); margin-bottom:24px;">
         <h3 style="margin-top:0; color:var(--gold); display:flex; align-items:center; gap:10px;">📢 Объявление</h3>`;
-    
     if (isTeacher) {
         html += `<textarea id="annTextArea" class="self-input" style="min-height:80px; margin-bottom:10px;" placeholder="Напишите объявление для учеников...">${window.escapeHtml(text)}</textarea>
                  <button class="btn" onclick="window.saveAnnouncement()" style="background:var(--gold); color:#000;">Сохранить</button>`;
     } else {
         html += `<p style="white-space:pre-wrap; font-size:16px; margin:0;">${window.escapeHtml(text)}</p>`;
     }
-    
     return html + `</div>`;
 }
 
-/* ============================================================
-   ВИДЕО-УРОКИ И ПОШАГОВЫЙ КВИЗ
-   ============================================================ */
 window.renderVideoPage = function(lessonId) {
     var app = window.$("app"); if (!app) return; app.innerHTML = "";
     app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
@@ -515,17 +594,15 @@ window.checkGapFill = function(lessonId) {
     if (pct >= 70 && window.addXP) { window.addXP(50); window.showToast("Отлично! +50 XP", "ok"); }
 };
 
-/* ============================================================
-   ТРЕНИРОВКА (Объединяем стандартные и кастомные тесты)
-   ============================================================ */
 window.renderTrainingPage = function(mdkId) {
     var app = window.$("app"); if (!app) return; app.innerHTML = "";
     app.appendChild(el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
 
+    var globalTime = parseInt(localStorage.getItem("mdk.global_time")) || 10;
+
     if (!mdkId) {
         app.innerHTML += '<section class="hero"><h1>🎯 Тренировка</h1><p>Выберите тест для прохождения</p></section>';
         
-        // Стандартные тесты курса
         var questions = [];
         if (window.MDK_DATA && window.MDK_DATA[window.state.activeCourseId]) {
             window.MDK_DATA[window.state.activeCourseId].sections.forEach(s => s.topics.forEach(t => {
@@ -533,15 +610,13 @@ window.renderTrainingPage = function(mdkId) {
             }));
         }
 
-        // Кастомные тесты
         var customData = window.getCustomData();
-        
         var grid = el('<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px;"></div>');
         
         if (questions.length > 0) {
             grid.appendChild(el(`<div class="module" style="cursor:pointer; border-left:4px solid var(--accent);" onclick="location.hash='#/training/standard'">
                 <h3 style="margin-top:0;">Стандартный тест</h3>
-                <p style="color:var(--muted); font-size:14px;">${questions.length} вопросов из курса</p>
+                <p style="color:var(--muted); font-size:14px;">${questions.length} вопросов · ${globalTime} мин</p>
             </div>`));
         }
 
@@ -569,7 +644,7 @@ window.renderTrainingPage = function(mdkId) {
         
         app.innerHTML += `<section class="hero"><h1>Стандартный тест</h1><p>Вопросов: ${questions.length}</p></section>`;
         var box = el('<div class="module"></div>');
-        box.innerHTML = window.buildTestBlock("train", "standard", questions);
+        box.innerHTML = window.buildTestBlock("train", "standard", questions, globalTime);
         app.appendChild(box);
     }
 };
@@ -583,7 +658,7 @@ window.startCustomTest = function(testId) {
     app.appendChild(el('<a class="backlink" href="#/training" style="color:var(--accent);">← К списку тестов</a>'));
     app.innerHTML += `<section class="hero"><h1>${window.escapeHtml(test.title)}</h1><p>Вопросов: ${test.questions.length}</p></section>`;
     var box = el('<div class="module"></div>');
-    box.innerHTML = window.buildTestBlock("custom", test.id, test.questions);
+    box.innerHTML = window.buildTestBlock("custom", test.id, test.questions, test.time);
     app.appendChild(box);
 };
 
@@ -695,6 +770,7 @@ window.renderTopic = function(topicId, activeTab) {
 
     var contentBox = el('<div class="module"></div>'); app.appendChild(contentBox);
     var baseQuestions = topic.test || topic.tests || [];
+    var globalTime = parseInt(localStorage.getItem("mdk.global_time")) || 10;
 
     if (activeTab === 'lectures' && topic.lectures) {
         topic.lectures.forEach((lec, i) => {
@@ -709,7 +785,7 @@ window.renderTopic = function(topicId, activeTab) {
             contentBox.innerHTML += `<div style="margin-bottom:20px; padding:20px; background:var(--card-soft); border-radius:12px; border:1px solid var(--border); ${isDone}">
                 <h4 style="margin-top:0; color:var(--accent); font-size:18px;">${p.code} ${p.title}</h4>
                 <p><b>Task:</b> ${p.task}</p>
-                ${baseQuestions.length > 0 ? window.buildTestBlock("prac", uniqueId, baseQuestions) : ''}
+                ${baseQuestions.length > 0 ? window.buildTestBlock("prac", uniqueId, baseQuestions, 0) : ''}
             </div>`;
         });
     }
@@ -760,12 +836,12 @@ window.renderTopic = function(topicId, activeTab) {
             contentBox.innerHTML += `<div style="margin-bottom:20px; padding:20px; background:var(--card-soft); border-radius:12px; border:1px solid var(--border);">
                 <h4 style="margin-top:0; color:var(--accent); font-size:18px;">${sw.title}</h4>
                 <p><b>Task:</b> ${sw.task}</p>
-                ${baseQuestions.length > 0 ? window.buildTestBlock("self", uniqueId, baseQuestions) : ''}
+                ${baseQuestions.length > 0 ? window.buildTestBlock("self", uniqueId, baseQuestions, 0) : ''}
             </div>`;
         });
     }
     else if (activeTab === 'test' && baseQuestions.length > 0) {
-        contentBox.innerHTML = `<h3>📝 Тест</h3>${window.buildTestBlock("inline", topicId, baseQuestions)}`;
+        contentBox.innerHTML = `<h3>📝 Тест</h3>${window.buildTestBlock("inline", topicId, baseQuestions, globalTime)}`;
     }
 };
 
@@ -807,11 +883,41 @@ window.saveWritingWork = function(uniqueId) {
 };
 
 /* ============================================================
-   ТЕСТ-БЛОКИ
+   ТЕСТ-БЛОКИ (С добавленным таймером)
    ============================================================ */
-window.buildTestBlock = function(prefix, uniqueId, questions) {
+window.buildTestBlock = function(prefix, uniqueId, questions, timeLimit) {
     var safeQuestions = encodeURIComponent(JSON.stringify(questions));
-    var html = `<div style="margin-top:20px; padding-top:20px; border-top:1px dashed var(--border);"><p style="font-weight:bold;">🎯 Проверочный тест:</p>`;
+    var html = `<div id="test_wrap_${prefix}_${uniqueId}">`;
+    
+    // Если задано время, выводим таймер
+    if (timeLimit && timeLimit > 0) {
+        var timerId = "timer_" + prefix + "_" + uniqueId;
+        html += `<div style="font-size:24px; font-weight:bold; color:var(--accent); text-align:right; margin-bottom:20px; background:var(--card-soft); padding:10px 15px; border-radius:8px;" id="${timerId}">⏱️ ${timeLimit}:00</div>`;
+        
+        // Запуск таймера после вставки в DOM
+        setTimeout(() => {
+            var timeLeft = timeLimit * 60;
+            var timerEl = document.getElementById(timerId);
+            if (!timerEl) return;
+            
+            var tid = setInterval(() => {
+                timeLeft--;
+                var m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+                timerEl.textContent = "⏱️ " + (m<10?"0":"")+m + ":" + (s<10?"0":"")+s;
+                
+                if (timeLeft <= 60) timerEl.style.color = "var(--err)";
+                if (timeLeft <= 0) {
+                    clearInterval(tid);
+                    timerEl.textContent = "⏰ Время вышло!";
+                    // Автоматическая сдача
+                    var submitBtn = document.getElementById(`btn_submit_${prefix}_${uniqueId}`);
+                    if (submitBtn && !submitBtn.disabled) submitBtn.click();
+                }
+            }, 1000);
+        }, 100);
+    }
+
+    html += `<div style="margin-top:20px; padding-top:20px; border-top:1px dashed var(--border);"><p style="font-weight:bold;">🎯 Проверочный тест:</p>`;
     questions.forEach((q, qi) => {
         html += `<div style="margin-bottom:15px; padding:15px; background:var(--bg); border-radius:8px;"><b>${qi + 1}. ${q.q}</b><div style="margin-top:10px;">`;
         q.options.forEach((opt, oi) => {
@@ -819,11 +925,17 @@ window.buildTestBlock = function(prefix, uniqueId, questions) {
         });
         html += `</div></div>`;
     });
-    html += `<button class="btn" style="width:100%; padding:12px;" onclick="window.gradeTest('${prefix}', '${uniqueId}', '${safeQuestions}')">Проверить</button><div id="fb_${prefix}_${uniqueId}" style="text-align:center; margin-top:15px; font-weight:bold;"></div></div>`;
+    
+    html += `<button class="btn" id="btn_submit_${prefix}_${uniqueId}" style="width:100%; padding:12px;" onclick="window.gradeTest('${prefix}', '${uniqueId}', '${safeQuestions}')">Проверить</button>`;
+    html += `<div id="fb_${prefix}_${uniqueId}" style="text-align:center; margin-top:15px; font-weight:bold;"></div></div></div>`;
+    
     return html;
 };
 
 window.gradeTest = function(prefix, uniqueId, encodedQuestions) {
+    var btn = document.getElementById(`btn_submit_${prefix}_${uniqueId}`);
+    if (btn) btn.disabled = true; // Блокируем кнопку, чтобы нельзя было сдать дважды
+
     var questions = JSON.parse(decodeURIComponent(encodedQuestions));
     var correct = 0;
     questions.forEach((q, qi) => {
@@ -888,7 +1000,7 @@ window.renderSemesterTests = function(testId) {
   app.appendChild(el('<a class="backlink" href="#/semester" style="color:var(--accent);">← К списку контрольных</a>'));
   app.innerHTML += `<section class="hero"><h1>${test.title}</h1><p>${test.subtitle} · ${test.time} мин</p></section>`;
   var box = el('<div class="module"></div>');
-  box.innerHTML = window.buildTestBlock("sem", test.id, test.questions);
+  box.innerHTML = window.buildTestBlock("sem", test.id, test.questions, test.time);
   app.appendChild(box);
 };
 
@@ -930,7 +1042,7 @@ window.renderFinalExam = function(examId, variantNum) {
   app.appendChild(el('<a class="backlink" href="#/final-exam" style="color:var(--accent);">← К списку экзаменов</a>'));
   app.innerHTML += `<section class="hero"><h1>${exam.title}</h1><p>Вариант ${vNum} · ${exam.time} мин</p></section>`;
   var box = el('<div class="module"></div>');
-  box.innerHTML = window.buildTestBlock("final", exam.id + "_v" + vNum, variant.questions);
+  box.innerHTML = window.buildTestBlock("final", exam.id + "_v" + vNum, variant.questions, exam.time);
   app.appendChild(box);
 };
 
@@ -942,13 +1054,11 @@ function renderHome() {
   var c = window.COURSE;
   if (!c) { app.innerHTML = "<div class='module'>Ошибка загрузки.</div>"; return; }
 
-  // Блок объявления
   var annHtml = renderAnnouncementBlock();
 
   var html = `<section class="hero"><h1>${c.title}</h1><p>${c.module || ""}</p></section>`;
   html += annHtml;
 
-  // Быстрые ссылки на контрольные
   if (window.SEMESTER_TESTS && window.FINAL_EXAMS) {
     var cId = window.state.activeCourseId;
     var semCount = (window.SEMESTER_TESTS[cId] || []).length;
@@ -986,6 +1096,7 @@ function renderHome() {
    ============================================================ */
 window.addEventListener("DOMContentLoaded", function() {
   if (window.$("btnLoginStudent")) window.$("btnLoginStudent").onclick = window.doStudentLogin;
+  if (window.$("btnLoginTest")) window.$("btnLoginTest").onclick = window.loginAsTestStudent;
   if (window.$("btnLoginTeacher")) window.$("btnLoginTeacher").onclick = window.doTeacherLogin;
   if (window.$("burgerBtn")) window.$("burgerBtn").onclick = () => { window.$("drawer").classList.toggle("open"); window.$("drawerOverlay").classList.toggle("open"); };
   if (window.$("drawerClose")) window.$("drawerClose").onclick = window.closeDrawer;
