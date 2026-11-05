@@ -6,7 +6,41 @@ function desc(k,t){var m=/^(prac|self|writing)_([^_]+)_\d+$/.exec(k);if(m)return
 function belongsToCourse(k,t){if(k==="__final__"+window.state.activeCourseId)return true;var m=/^(?:prac|self|writing)_([^_]+)_\d+$/.exec(k);if(m)return Object.prototype.hasOwnProperty.call(t,m[1]);var semester=window.SEMESTER_TESTS&&window.SEMESTER_TESTS[window.state.activeCourseId]||[];if(semester.some(x=>x.id===k))return true;var finals=window.FINAL_EXAMS&&window.FINAL_EXAMS[window.state.activeCourseId]||[];if(finals.some(x=>k.indexOf(x.id)===0))return true;return false;}
 function grade(x){if(!x||typeof x!=="object")return null;var g=Number(x.grade);if(Number.isFinite(g)&&g>=2&&g<=5)return g;var n=Number(x.total),m=Number(x.max);if(Number.isFinite(n)&&Number.isFinite(m)&&m>0){var p=n/m*100;return p>=90?5:p>=75?4:p>=60?3:2;}return null;}
 function esc(x){return window.escapeHtml(x==null?"":String(x));}
-function csv(rows){var txt="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"').join(";")).join("\r\n");var u=URL.createObjectURL(new Blob([txt],{type:"text/csv;charset=utf-8"}));var a=document.createElement("a");a.href=u;a.download="english-results-"+new Date().toISOString().slice(0,10)+".csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);}
+function xml(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;");}
+function col(n){var x="";for(n++;n>0;n=Math.floor((n-1)/26))x=String.fromCharCode(65+(n-1)%26)+x;return x;}
+function crc32(bytes){var c=-1;for(var i=0;i<bytes.length;i++){c^=bytes[i];for(var j=0;j<8;j++)c=(c>>>1)^((c&1)?0xEDB88320:0);}return(c^(-1))>>>0;}
+function join(parts){var size=parts.reduce((n,p)=>n+p.length,0),out=new Uint8Array(size),at=0;parts.forEach(p=>{out.set(p,at);at+=p.length;});return out;}
+function zipStore(files){
+ var enc=new TextEncoder(),local=[],central=[],offset=0;
+ files.forEach(function(file){
+  var name=enc.encode(file.name),data=enc.encode(file.data),crc=crc32(data);
+  var h=new Uint8Array(30+name.length),v=new DataView(h.buffer);
+  v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x0800,true);v.setUint16(8,0,true);
+  v.setUint16(10,0,true);v.setUint16(12,0x21,true);v.setUint32(14,crc,true);v.setUint32(18,data.length,true);v.setUint32(22,data.length,true);v.setUint16(26,name.length,true);v.setUint16(28,0,true);h.set(name,30);
+  local.push(h,data);
+  var c=new Uint8Array(46+name.length),cv=new DataView(c.buffer);
+  cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x0800,true);cv.setUint16(10,0,true);
+  cv.setUint16(12,0,true);cv.setUint16(14,0x21,true);cv.setUint32(16,crc,true);cv.setUint32(20,data.length,true);cv.setUint32(24,data.length,true);
+  cv.setUint16(28,name.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);cv.setUint32(38,0,true);cv.setUint32(42,offset,true);c.set(name,46);central.push(c);
+  offset+=h.length+data.length;
+ });
+ var centralBytes=join(central),localBytes=join(local),end=new Uint8Array(22),ev=new DataView(end.buffer);
+ ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);ev.setUint16(8,files.length,true);ev.setUint16(10,files.length,true);ev.setUint32(12,centralBytes.length,true);ev.setUint32(16,localBytes.length,true);ev.setUint16(20,0,true);
+ return join([localBytes,centralBytes,end]);
+}
+function xlsx(rows){
+ var sheet='<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
+ rows.forEach(function(row,ri){sheet+='<row r="'+(ri+1)+'">';row.forEach(function(value,ci){var ref=col(ci)+(ri+1);if(typeof value==="number"&&Number.isFinite(value))sheet+='<c r="'+ref+'"><v>'+value+'</v></c>';else sheet+='<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+xml(value)+'</t></is></c>';});sheet+='</row>';});sheet+='</sheetData></worksheet>';
+ var files=[
+  {name:"[Content_Types].xml",data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'},
+  {name:"_rels/.rels",data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+  {name:"xl/workbook.xml",data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Результаты" sheetId="1" r:id="rId1"/></sheets></workbook>'},
+  {name:"xl/_rels/workbook.xml.rels",data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'},
+  {name:"xl/worksheets/sheet1.xml",data:sheet}
+ ];
+ var bytes=zipStore(files),blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download="english-results-"+new Date().toISOString().slice(0,10)+".xlsx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 window.renderCourseReportsPage=function(){
 var app=document.getElementById("app");if(!app)return;app.innerHTML="";var cr=document.getElementById("crumbs");if(cr)cr.textContent="Аналитика преподавателя";
 app.appendChild(window.el('<a class="backlink" href="#/" style="color:var(--accent);">← На главную</a>'));
@@ -30,7 +64,7 @@ document.getElementById("analyticsMeta").textContent="Курс: "+(window.COURSE
 }
 function load(){wrap.innerHTML='<div class="module">Загружаю данные…</div>';window.API.getStudents().then(d=>{if(!d||!d.ok||!Array.isArray(d.students))throw Error("Журнал не вернул список студентов");students=d.students.filter(s=>!["ТЕСТ","TEST"].includes(String(s.group||"").toUpperCase()));var sel=document.getElementById("analyticsGroup"),old=sel.value,gs=[...new Set(students.map(s=>s.group).filter(Boolean))].sort();sel.innerHTML='<option value="">Все группы</option>'+gs.map(g=>'<option value="'+esc(g)+'">'+esc(g)+'</option>').join("");if(gs.includes(old))sel.value=old;render();}).catch(e=>wrap.innerHTML='<div class="module" style="color:var(--err)">Не удалось загрузить журнал: '+esc(e.message)+'. Проверьте Google Apps Script.</div>');}
 document.getElementById("refreshAnalytics").onclick=load;document.getElementById("analyticsGroup").onchange=render;
-document.getElementById("exportAnalytics").onclick=function(){if(!students.length)return window.showToast("Нет данных","err");var map=topics(),rows=[["ФИО","Группа","Курс","Тема","Тип","Оценка","Баллы","Максимум","XP","Дата"]],g=document.getElementById("analyticsGroup").value;students.filter(s=>!g||String(s.group||"")===g).forEach(s=>{var p=payload(s),rs=p.results||{};Object.keys(rs).forEach(k=>{if(!belongsToCourse(k,map))return;var x=rs[k]||{},d=desc(k,map);rows.push([s.name,s.group,window.COURSE&&window.COURSE.title||window.state.activeCourseId,d.topic,d.type,x.grade||"",x.total==null?"":x.total,x.max==null?"":x.max,p.xp||0,x.date||x.completedAt||""]);});});csv(rows);window.showToast("CSV-файл для Excel выгружен","ok");};
+document.getElementById("exportAnalytics").onclick=function(){if(!students.length)return window.showToast("Нет данных","err");var map=topics(),rows=[["ФИО","Группа","Курс","Тема","Тип","Оценка","Баллы","Максимум","XP","Дата"]],g=document.getElementById("analyticsGroup").value;students.filter(s=>!g||String(s.group||"")===g).forEach(s=>{var p=payload(s),rs=p.results||{};Object.keys(rs).forEach(k=>{if(!belongsToCourse(k,map))return;var x=rs[k]||{},d=desc(k,map);rows.push([s.name,s.group,window.COURSE&&window.COURSE.title||window.state.activeCourseId,d.topic,d.type,x.grade||"",x.total==null?(x.score==null?"":x.score):x.total,x.max==null?(x.maxScore==null?"":x.maxScore):x.max,p.xp||0,x.date||x.completedAt||""]);});});xlsx(rows);window.showToast("Книга Excel (.xlsx) выгружена","ok");};
 load();
 };
 window.teacherGradeWriting=function(studentKey,resultKey){if(!window.hasStaffRole())return window.showToast("Недостаточно прав","err");var g=prompt("Оценка за письменную работу (2–5):");if(!g||isNaN(g)||g<2||g>5)return;window.API.getStudents().then(d=>{var s=(d.students||[]).find(x=>(x.name.trim().toLowerCase()+"|"+x.group.trim().toLowerCase())===studentKey);if(!s)return;var p=payload(s);if(!p.results||!p.results[resultKey])return;p.results[resultKey].grade=Number(g);p.results[resultKey].status="graded";if(g>=4)p.xp=(p.xp||0)+20;return window.API.saveStudent(studentKey,s.name,s.group,JSON.stringify(p)).then(r=>{if(r.ok){window.showToast("Оценка выставлена","ok");window.renderCourseReportsPage();}else window.showToast("Ошибка сохранения","err");});}).catch(()=>window.showToast("Ошибка связи с журналом","err"));};
