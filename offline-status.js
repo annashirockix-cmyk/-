@@ -9,7 +9,7 @@ async function check(){
   if(!reg&&navigator.onLine)reg=await navigator.serviceWorker.register("./service-worker.js");
   if(!reg)throw Error("Service Worker ещё не установлен");
   await navigator.serviceWorker.ready;
-  var cache=await caches.open("english-portal-cache-v2");
+  var cache=await caches.open("english-portal-cache-v3");
   var files=["./index.html","./style.css","./app.js","./data-basic.js","./data-technical.js","./reports.js"];
   var found=await Promise.all(files.map(function(path){return cache.match(path,{ignoreSearch:true});}));
   var ready=found.every(Boolean);
