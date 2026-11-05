@@ -1,5 +1,5 @@
 "use strict";
-var CACHE="english-portal-cache-v2";
+var CACHE="english-portal-cache-v3";
 var FILES=["./","./index.html","./style.css","./api.js","./app.js","./data-global.js","./data-basic.js","./data-technical.js","./semester-tests.js","./tests-extra.js","./exam-basic.js","./exam-technical.js","./shop.js","./reports.js","./extra.js","./info.js","./rating.js","./schedule.js","./flashcards.js","./assistant.js","./offline-status.js"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith("english-portal-cache-")&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
