@@ -1,19 +1,20 @@
 "use strict";
 (function(){
 async function check(){
- var badge=document.getElementById("offlineStatus");if(!badge)return;
- function set(text,ok,title){badge.textContent=text;badge.style.borderColor=ok?"var(--ok)":"var(--err)";badge.title=title||text;}
- if(!("serviceWorker"in navigator)||location.protocol==="file:"){set("⚠️ Офлайн недоступен",false,"Для офлайн-кэша откройте портал через HTTPS (GitHub Pages)");return;}
+ var e=document.getElementById("offlineStatus");if(!e)return;
+ if(!("serviceWorker"in navigator)||location.protocol==="file:"){status("⚠️ Офлайн недоступен",false,"Откройте портал через HTTPS (GitHub Pages)");return;}
  try{
-  await navigator.serviceWorker.register("./service-worker.js");
+  var reg=await navigator.serviceWorker.getRegistration();
+  if(!reg&&navigator.onLine)reg=await navigator.serviceWorker.register("./service-worker.js");
+  if(!reg)throw Error("Service Worker ещё не установлен");
   await navigator.serviceWorker.ready;
   var cache=await caches.open("english-portal-cache-v1");
   var files=["./index.html","./style.css","./app.js","./data-basic.js","./data-technical.js","./reports.js"];
   var found=await Promise.all(files.map(function(path){return cache.match(path,{ignoreSearch:true});}));
   var ready=found.every(Boolean);
-  if(!navigator.onLine)set(ready?"📴 Офлайн готов":"📴 Нет сети · кэш неполный",ready,ready?"Основные учебные файлы сохранены на устройстве":"Не все необходимые файлы были загружены до отключения сети");
-  else set(ready?"✓ Офлайн готов":"⚠️ Кэш загружается",ready,ready?"Основные учебные материалы сохранены для работы без интернета":"Оставьте портал открытым онлайн и обновите страницу, чтобы заполнить кэш");
- }catch(err){set("⚠️ Ошибка офлайн-кэша",false,err.message||"Не удалось проверить кэш");console.warn("Offline readiness:",err);}
+  if(!navigator.onLine)status(ready?"📴 Офлайн · готово":"📴 Офлайн · кэш неполный",ready,ready?"Основные файлы доступны без интернета":"Часть обязательных файлов не была сохранена; подключитесь к сети и обновите портал");
+  else status(ready?"✓ Офлайн готов":"⚠️ Кэш неполный",ready,ready?"Основные учебные файлы сохранены для работы без интернета":"Откройте портал онлайн и обновите страницу для загрузки файлов");
+ }catch(err){status(navigator.onLine?"⚠️ Ошибка офлайн-кэша":"📴 Офлайн не подготовлен",false,err.message);}
 }
 window.addEventListener("load",check);
 window.addEventListener("online",check);
