@@ -70,7 +70,7 @@
       </select>
   </div>
   <div class="crumbs" id="crumbs" style="margin-left:auto;"></div>
-  <div class="topbar-status"><span class="status-pill" id="xpCount">🌟 0 XP</span></div>
+  <div class="topbar-status"><span class="status-pill" id="xpCount">🌟 0 XP</span><span class="status-pill" id="offlineStatus" style="margin-left:6px;">🌐 Проверка…</span></div>
   <button id="themeToggle" class="btn ghost" style="padding: 8px 12px; margin-left: 5px;" title="Сменить тему">🎨</button>
   <button id="topbarLogout" class="btn ghost" style="padding:8px 12px; margin-left:5px;" onclick="window.handleLogout()" title="Выйти">🚪</button>
 </header>
@@ -139,6 +139,7 @@
 <script src="schedule.js"></script>
 <script src="flashcards.js"></script>
 <script src="assistant.js"></script>
+<script src="offline-status.js"></script>
 
 <!-- Скрипт для отображения меню преподавателя -->
 <script>
@@ -151,5 +152,6 @@
     }
   });
 </script>
+<script>if ("serviceWorker" in navigator && location.protocol !== "file:") { window.addEventListener("load", function(){ navigator.serviceWorker.register("./service-worker.js").catch(function(e){ console.warn("Service Worker:", e); }); }); }</script>
 </body>
 </html>
