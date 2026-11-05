@@ -136,9 +136,25 @@ window.loginAsTestStudent = function() {
   window.showToast("Вы вошли как Тестовый Студент.", "ok");
 };
 
-window.doTeacherLogin = function() {
-  if (window.portalTeacherLogin) return window.portalTeacherLogin();
-  window.showToast("Модуль безопасной авторизации не загружен.", "err");
+window.doTeacherLogin = async function() {
+  var u = window.$("teacherUser").value.trim(), p = window.$("teacherPass").value.trim();
+  var errEl = window.$("teacherLoginError"), button = window.$("btnLoginTeacher");
+  if (!u || !p) { errEl.textContent = "Введите логин и пароль"; errEl.style.display = "block"; return; }
+  if (errEl) { errEl.style.display = "none"; errEl.textContent = ""; }
+  if (button) { button.disabled = true; button.textContent = "Проверка…"; }
+  try {
+    var response = await window.API.login(u, p);
+    var account = response && (response.user || response.staff || response.account || response);
+    var role = account && String(account.role || account.type || "").toLowerCase();
+    if (!response || response.ok !== true || !["teacher","admin"].includes(role)) throw new Error((response && response.error) || "Сервер не подтвердил права преподавателя");
+    window.state.staff = { name: account.name || account.fullName || (role === "admin" ? "Администратор" : u), role: role, token: response.token || account.token || null };
+    window.state.student = null;
+    try { localStorage.setItem("mdk.staff", JSON.stringify(window.state.staff)); localStorage.removeItem("mdk.student"); } catch(e) {}
+    window.renderUserChip(); window.updateXpDisplay(); window.syncRoleNavigation(); window.route();
+  } catch (error) {
+    if (errEl) { errEl.textContent = error.message || "Ошибка авторизации"; errEl.style.display = "block"; }
+    else window.showToast(error.message || "Ошибка авторизации", "err");
+  } finally { if (button) { button.disabled = false; button.textContent = "Войти в журнал"; } }
 };
 
 window.handleLogout = function() {
@@ -151,7 +167,7 @@ window.handleLogout = function() {
   if (c) c.style.display = "none";
   if (r) r.style.display = "none";
 
-  window.closeDrawer(); window.route();
+  window.syncRoleNavigation(); window.closeDrawer(); window.route();
 };
 
 /* ============================================================
@@ -180,6 +196,11 @@ window.renderUserChip = function() {
 /* ============================================================
    ГЛАВНЫЙ РОУТЕР
    ============================================================ */
+window.hasStaffRole = function(){ return !!(window.state.staff && ["teacher","admin"].includes(window.state.staff.role)); };
+window.isAdmin = function(){ return !!(window.state.staff && window.state.staff.role === "admin"); };
+window.syncRoleNavigation = function(){
+  ["menuConstructor","menuReports"].forEach(function(id){ var node=document.getElementById(id); if(node) node.style.display=window.hasStaffRole()?"flex":"none"; });
+};
 window.route = function() {
   window.closeDrawer();
   var overlay = window.$("loginOverlay"); var fab = document.getElementById("asFab");
@@ -193,6 +214,10 @@ window.route = function() {
 
   try {
     var page = parts[0] || "/";
+    if (["reports","constructor","group-certificate"].includes(page) && !window.hasStaffRole()) {
+      app.innerHTML = '<div class="module" style="color:var(--err);text-align:center;">⛔ Недостаточно прав для доступа к этому разделу.</div>';
+      return;
+    }
     if (page === "topic") window.renderTopic(parts[1], parts[2]);
     else if (page === "certificate") window.renderCertificatePage();
     else if (page === "profile" && window.renderProfilePage) window.renderProfilePage();
