@@ -45,7 +45,7 @@ window.state = {
 try {
   window.state.activeCourseId = localStorage.getItem("mdk.active") || "basic";
   var _s = JSON.parse(localStorage.getItem("mdk.student") || "null"); if (_s && _s.name) window.state.student = _s;
-  var _st = JSON.parse(localStorage.getItem("mdk.staff") || "null"); if (_st && _st.name) window.state.staff = _st;
+  // Staff role is never restored from localStorage; the server must verify each login.
 } catch (e) { console.warn("LocalStorage недоступен"); }
 
 if (!window.MDK_DATA || !window.MDK_DATA[window.state.activeCourseId]) window.state.activeCourseId = "basic";
@@ -137,21 +137,8 @@ window.loginAsTestStudent = function() {
 };
 
 window.doTeacherLogin = function() {
-  var u = window.$("teacherUser").value.trim(); var p = window.$("teacherPass").value.trim();
-  var errEl = window.$("teacherLoginError");
-  if (!u || !p) { errEl.textContent = "Введите логин и пароль"; errEl.style.display = "block"; return; }
-  if ((u === "admin" && p === "admin") || (u === "teacher" && p === "teacher")) {
-      window.state.staff = { name: u === "admin" ? "Администратор" : "Лазутина Ольга Валерьевна", role: u === "admin" ? "admin" : "teacher" };
-      window.state.student = null; window.state.xp = 999999;
-      try { localStorage.setItem("mdk.staff", JSON.stringify(window.state.staff)); localStorage.removeItem("mdk.student"); } catch(e){}
-      
-      var c = document.getElementById("menuConstructor");
-      var r = document.getElementById("menuReports");
-      if (c) c.style.display = "flex";
-      if (r) r.style.display = "flex";
-
-      window.renderUserChip(); window.updateXpDisplay(); window.route();
-  } else { errEl.textContent = "Неверный логин или пароль"; errEl.style.display = "block"; }
+  if (window.portalTeacherLogin) return window.portalTeacherLogin();
+  window.showToast("Модуль безопасной авторизации не загружен.", "err");
 };
 
 window.handleLogout = function() {
@@ -1076,11 +1063,17 @@ window.gradeTest = function(prefix, uniqueId, encodedQuestions) {
     var pct = Math.round((correct / questions.length) * 100);
     var grade = pct >= 90 ? 5 : pct >= 75 ? 4 : pct >= 60 ? 3 : 2;
     document.getElementById(`fb_${prefix}_${uniqueId}`).innerHTML = `Оценка: <span style="color:${grade>=3?'var(--ok)':'var(--err)'}; font-size:24px;">${grade}</span> (${correct}/${questions.length})`;
-    if (grade >= 3 && !window.state.results[uniqueId]) {
-        window.state.results[uniqueId] = { grade: grade };
+    // Store failed attempts too; otherwise teacher analytics hides difficult topics.
+    window.state.results[uniqueId] = Object.assign({}, window.state.results[uniqueId] || {}, {
+        grade: grade, score: correct, maxScore: questions.length, percent: pct,
+        courseId: window.state.activeCourseId,
+        topicId: prefix === "inline" ? uniqueId : (String(uniqueId).split("_")[1] || ""),
+        workType: prefix, completedAt: new Date().toISOString()
+    });
+    if (grade >= 3 && !window.state.results[uniqueId].xpAwarded) {
+        window.state.results[uniqueId].xpAwarded = true;
         if (window.addXP) window.addXP(15);
-        window.saveStudentData();
-    }
+    } else if (window.saveStudentData) window.saveStudentData();
 };
 
 /* ============================================================
