@@ -1,5 +1,6 @@
 "use strict";
 (function(){
+function status(t,ok,tip){var e=document.getElementById("offlineStatus");if(!e)return;e.textContent=t;e.style.borderColor=ok?"var(--ok)":"var(--err)";e.title=tip||t;}
 async function check(){
  var e=document.getElementById("offlineStatus");if(!e)return;
  if(!("serviceWorker"in navigator)||location.protocol==="file:"){status("⚠️ Офлайн недоступен",false,"Откройте портал через HTTPS (GitHub Pages)");return;}
